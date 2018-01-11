@@ -3,11 +3,10 @@ import telebot
 import logging
 import config
 import main_menu
+import sql_requests
 from telegramcalendar import create_calendar
 import pagination
 from telebot import types
-# import sql_requests
-import time
 
 logging.basicConfig(format=u'%(levelname)-8s [%(asctime)s] %(message)s', level=logging.ERROR, filename=u'log.txt')
 
@@ -32,6 +31,18 @@ def get_main_menu(message):
 def get_main_menu_from_outside(call):
     markup = main_menu.create_main_menu()
     bot.edit_message_text("ВЫБИРАЙ", call.from_user.id, call.message.message_id, reply_markup=markup)
+
+
+#  Открыть выбранный item
+@bot.message_handler(content_types=['text'])
+def open_item(message):
+    if '/item' in message.text:
+        message_text = sql_requests.get_url_by_item(message.text[6:])
+        markup = types.InlineKeyboardMarkup(row_width=1)
+        row = [types.InlineKeyboardButton("Назад", callback_data="back-to-pagination"),
+               types.InlineKeyboardButton("Добавить в заказ", callback_data="back-to-pagination")]
+        markup.row(*row)
+        bot.send_message(message.chat.id, message_text, reply_markup=markup)
 
 
 '''
@@ -141,6 +152,15 @@ def next_page(call):
 @bot.callback_query_handler(func=lambda call: call.data == 'previous-page')
 def previous_page(call):
     current_page[call.message.chat.id] = turn_page(call)
+
+
+@bot.callback_query_handler(func=lambda call: call.data == 'back-to-pagination')
+def previous_page(call):
+    chat_id = call.message.chat.id
+    message = pagination.create_list(current_type_of_thing.get(chat_id), current_page[chat_id])
+    bot.edit_message_text(message['message_text'], call.from_user.id,
+                          call.message.message_id, reply_markup=message['markup'], parse_mode='HTML')
+    bot.answer_callback_query(call.id, text="")
 
 
 def turn_page(call):
