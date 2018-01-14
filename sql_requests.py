@@ -23,6 +23,32 @@ def get_things_by_type(type_of_thing):
         logging.error(u'Method:'+sys._getframe().f_code.co_name+' sqlite3.DatabaseError: ' + str(err) + '')
 
 
+#  Получить ссылку на изображение по ID
+def get_url_by_item(item):
+    try:
+        conn = sqlite3.connect(_DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute("SELECT PICTURE_URL FROM ACCESSORIES WHERE ID = \"" + str(item) + "\"")
+        url = cursor.fetchone()[0]
+        conn.close()
+        return url
+    except sqlite3.DatabaseError as err:
+        logging.error(u'Method:'+sys._getframe().f_code.co_name+' sqlite3.DatabaseError: ' + str(err) + '')
+
+
+# Получить аксессуар по ID
+def get_thing_by_ID(thing_id):
+    try:
+        conn = sqlite3.connect(_DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM ACCESSORIES WHERE ID = \"" + str(thing_id) + "\"")
+        thing = cursor.fetchone()
+        conn.close()
+        return thing
+    except sqlite3.DatabaseError as err:
+        logging.error(u'Method:'+sys._getframe().f_code.co_name+' sqlite3.DatabaseError: ' + str(err) + '')
+
+
 '''
 # Сохранить вещи в БД
 def save_things(results, company):
