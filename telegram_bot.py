@@ -32,6 +32,7 @@ def get_main_menu(message):
     except KeyError:
         preorder = []
     message_to_send = main_menu.create_main_menu(preorder)
+    bot.send_sticker(chat_id, 'CAADAgADAgAD2INrCdsC2_uAN23lAg')
     bot.send_message(chat_id, message_to_send['message_text'], reply_markup=message_to_send['markup'])
 
 
@@ -74,6 +75,7 @@ def open_item(message):
     except ValueError as err:
         get_main_menu(message)
         logging.error(u'Method:' + sys._getframe().f_code.co_name + ' ValueError: ' + str(err) + '')
+
 
 '''
 *************************************************
