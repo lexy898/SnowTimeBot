@@ -29,4 +29,3 @@ def create_calendar(year, month):
            types.InlineKeyboardButton(">", callback_data="next-month")]
     markup.row(*row)
     return markup
-

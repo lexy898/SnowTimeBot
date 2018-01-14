@@ -34,7 +34,7 @@ def create_list(type_of_thing, page):
             position += 1
     if message_text == '':
         message_text = 'Инвентарь отсутствует'
-        row = [types.InlineKeyboardButton("Назад", callback_data="back-to-main-menu")]
+        row = [types.InlineKeyboardButton("Вернуться на главное меню", callback_data="back-to-main-menu")]
         markup.row(*row)
     else:
         if page == 0:
@@ -46,7 +46,7 @@ def create_list(type_of_thing, page):
         else:
             row.append(types.InlineKeyboardButton(">", callback_data="next-page"))
         markup.row(*row)
-        row = [types.InlineKeyboardButton("Назад", callback_data="back-to-main-menu")]
+        row = [types.InlineKeyboardButton("Вернуться на главное меню", callback_data="back-to-main-menu")]
         markup.row(*row)
     message = {'message_text': message_text, 'markup': markup}
     return message
