@@ -1,8 +1,11 @@
 import datetime
+
+import sys
 import telebot
 import logging
 import config
 import main_menu
+import preorder
 import sql_requests
 from telegramcalendar import create_calendar
 import pagination
@@ -17,34 +20,47 @@ bot = telebot.TeleBot(TOKEN)
 current_shown_dates = {}  # Текущая дата, закрепленная за пользователем
 current_type_of_thing = {}  # Текущий тип вещи, закрепленный за пользователем
 current_page = {}  # Текущая страница, закрепленная за пользователем
+preorders_list = {}  # Список предзаказов пользователей(корзины)
 
 
 # Создание главного меню
 @bot.message_handler(commands=['menu'])
 def get_main_menu(message):
-    markup = main_menu.create_main_menu()
-    bot.send_message(message.chat.id, "ВЫБИРАЙ", reply_markup=markup)
+    message_to_send = main_menu.create_main_menu()
+    bot.send_message(message.chat.id, message_to_send['message_text'], reply_markup=message_to_send['markup'])
 
 
 #  Переход на главное меню
 @bot.callback_query_handler(func=lambda call: call.data == 'back-to-main-menu')
 def get_main_menu_from_outside(call):
-    markup = main_menu.create_main_menu()
-    bot.edit_message_text("ВЫБИРАЙ", call.from_user.id, call.message.message_id, reply_markup=markup)
+    message = main_menu.create_main_menu()
+    bot.edit_message_text(message['message_text'], call.from_user.id, call.message.message_id,
+                          reply_markup=message['markup'])
 
 
 #  Открыть выбранный item
 @bot.message_handler(content_types=['text'])
 def open_item(message):
-    if '/item' in message.text:
-        message_text = sql_requests.get_url_by_item(message.text[6:])
-        markup = types.InlineKeyboardMarkup(row_width=1)
-        row = [types.InlineKeyboardButton("Назад", callback_data="back-to-pagination"),
-               types.InlineKeyboardButton("Добавить в заказ", callback_data="back-to-pagination")]
-        markup.row(*row)
-        bot.send_message(message.chat.id, message_text, reply_markup=markup)
-
-
+    chat_id = message.chat.id
+    try:
+        if '/item' in message.text:
+            item_number = message.text[6:]
+            message_text = sql_requests.get_url_by_item(item_number)
+            markup = types.InlineKeyboardMarkup(row_width=1)
+            row = [types.InlineKeyboardButton("Назад", callback_data="back-to-pagination"),
+                   types.InlineKeyboardButton("Добавить в заказ", callback_data="save-to-preorder" + item_number)]
+            markup.row(*row)
+            bot.send_message(chat_id, message_text, reply_markup=markup)
+        if '/delete_from_preorder' in message.text:
+            item_number = message.text[22:]
+            preorder_items = preorders_list[chat_id]
+            preorder_items.remove(item_number)
+            preorders_list[chat_id] = preorder_items
+            message = preorder.create_edit_preorder_page(preorders_list[chat_id])
+            bot.send_message(chat_id, message['message_text'], reply_markup=message['markup'], parse_mode='HTML')
+    except KeyError as err:
+        get_main_menu(message)
+        logging.error(u'Method:' + sys._getframe().f_code.co_name + ' KeyError: ' + str(err) + '')
 '''
 *************************************************
 *************КАЛЕНДАРЬ***************************
@@ -155,12 +171,17 @@ def previous_page(call):
 
 
 @bot.callback_query_handler(func=lambda call: call.data == 'back-to-pagination')
-def previous_page(call):
+def previous_page_from_item_page(call):
     chat_id = call.message.chat.id
-    message = pagination.create_list(current_type_of_thing.get(chat_id), current_page[chat_id])
-    bot.edit_message_text(message['message_text'], call.from_user.id,
-                          call.message.message_id, reply_markup=message['markup'], parse_mode='HTML')
-    bot.answer_callback_query(call.id, text="")
+    try:
+        message = pagination.create_list(current_type_of_thing.get(chat_id), current_page[chat_id])
+        bot.edit_message_text(message['message_text'], call.from_user.id,
+                              call.message.message_id, reply_markup=message['markup'], parse_mode='HTML')
+        bot.answer_callback_query(call.id, text="")
+    except KeyError as err:
+        bot.answer_callback_query(call.id, text="Что-то пошло не так. Попробуйте, пожалуйста, снова.")
+        get_main_menu(call.message)
+        logging.error(u'Method:' + sys._getframe().f_code.co_name + ' KeyError: ' + str(err) + '')
 
 
 def turn_page(call):
@@ -176,9 +197,73 @@ def turn_page(call):
         bot.answer_callback_query(call.id, text="")
         return current_page[chat_id]
     except KeyError as err:
-        logging.error(u'' + str(err) + '')
+        logging.error(u'Method:' + sys._getframe().f_code.co_name + ' KeyError: ' + str(err) + '')
         get_main_menu_from_outside(call)
         return 0
+
+
+'''
+*************************************************
+*************РАБОТА С  ПРЕДЗАКАЗОМ***************************
+*************************************************
+'''
+
+
+# Сохранить вещь в заказ
+@bot.callback_query_handler(func=lambda call: call.data[0:16] == 'save-to-preorder')
+def save_to_preorder(call):
+    chat_id = call.message.chat.id
+    item_number = call.data[16:]
+    try:
+        preorder_item_list = preorders_list[chat_id]
+        preorder_item_list.append(item_number)
+        preorders_list[chat_id] = preorder_item_list
+    except KeyError:
+        preorder_item_list = [item_number]
+        preorders_list[chat_id] = preorder_item_list
+    message = preorder.create_preorder_page(preorders_list[chat_id])
+    bot.edit_message_text(message['message_text'], call.from_user.id, call.message.message_id,
+                          reply_markup=message['markup'], parse_mode='HTML')
+    bot.answer_callback_query(call.id, text="")
+
+
+#  добавить в заказ что-нибудь еще
+@bot.callback_query_handler(func=lambda call: call.data == 'add-to-preorder')
+def add_to_preorder(call):
+    previous_page_from_item_page(call)
+
+
+@bot.callback_query_handler(func=lambda call: call.data == 'save-preorder')
+def save_preorder(call):
+    previous_page_from_item_page(call)
+
+
+@bot.callback_query_handler(func=lambda call: call.data == 'edit-preorder')
+def edit_preorder(call):
+    chat_id = call.message.chat.id
+    message = preorder.create_edit_preorder_page(preorders_list[chat_id])
+    bot.edit_message_text(message['message_text'], call.from_user.id, call.message.message_id,
+                          reply_markup=message['markup'], parse_mode='HTML')
+    bot.answer_callback_query(call.id, text="")
+
+
+@bot.callback_query_handler(func=lambda call: call.data == 'delete-preorder')
+def delete_preorder(call):
+    previous_page_from_item_page(call)
+
+
+#  Удалить выбранный item из предзаказа
+@bot.message_handler(content_types=['text'])
+def delete_from_preorder(message):
+    print(message.text)
+    if '/delete_from_preorder' in message.text:
+        chat_id = message.chat_id
+        item_number = message.text[22:]
+        preorder_items = preorders_list[chat_id]
+        preorder_items.remove(item_number)
+        preorders_list[chat_id] = preorder_items
+        message = preorder.create_edit_preorder_page(preorders_list[chat_id])
+        bot.send_message(chat_id, message['message_text'], reply_markup=message['markup'], parse_mode='HTML')
 
 
 bot.polling(none_stop=True, interval=0)
