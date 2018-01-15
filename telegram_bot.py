@@ -10,6 +10,7 @@ import sql_requests
 from telegramcalendar import create_calendar
 import pagination
 from telebot import types
+import customer_management
 
 logging.basicConfig(format=u'%(levelname)-8s [%(asctime)s] %(message)s', level=logging.ERROR, filename=u'log.txt')
 
@@ -21,12 +22,15 @@ current_shown_dates = {}  # Текущая дата, закрепленная з
 current_type_of_thing = {}  # Текущий тип вещи, закрепленный за пользователем
 current_page = {}  # Текущая страница, закрепленная за пользователем
 preorders_list = {}  # Список предзаказов пользователей(корзины)
+customer_mngmnt = customer_management.CustomerManagement()  # управление клиентами
 
 
 # Создание главного меню
-@bot.message_handler(commands=['menu'])
+@bot.message_handler(commands=['start'])
 def get_main_menu(message):
-    chat_id = message.chat.id
+    chat_id = str(message.chat.id)
+    if not customer_mngmnt.check_existence_client(chat_id):
+        customer_mngmnt.add_customer_name(chat_id, message.chat.first_name)
     try:
         preorder = preorders_list[chat_id]
     except KeyError:
@@ -252,7 +256,12 @@ def add_to_preorder(call):
 #  Сохранить предзаказ(создание заказа)
 @bot.callback_query_handler(func=lambda call: call.data == 'save-preorder')
 def save_preorder(call):
-    previous_page_from_item_page(call)
+    chat_id = str(call.message.chat.id)
+    if customer_mngmnt.check_existence_phone(chat_id):
+        print('Телефон есть')
+    else:
+        print('Телефона  нет')
+    #message = preorder.create_ask_phone_page(chat_id, '')
 
 
 # Редактировать предзаказ
@@ -265,7 +274,7 @@ def edit_preorder(call):
     bot.answer_callback_query(call.id, text="")
 
 
-#  Удалить предзаказ. Появляется страничка одтверждения
+#  Удалить предзаказ. Появляется страничка подтверждения
 @bot.callback_query_handler(func=lambda call: call.data == 'delete-preorder')
 def delete_preorder(call):
     try:

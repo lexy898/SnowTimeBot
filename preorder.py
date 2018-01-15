@@ -79,3 +79,6 @@ def create_delete_approve_page(items_list):
     else:
         message = main_menu.create_main_menu()
     return message
+
+def create_ask_phone_page():
+    pass

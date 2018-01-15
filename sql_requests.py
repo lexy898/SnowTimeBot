@@ -49,6 +49,51 @@ def get_thing_by_ID(thing_id):
         logging.error(u'Method:'+sys._getframe().f_code.co_name+' sqlite3.DatabaseError: ' + str(err) + '')
 
 
+#  Загрузить всех клиентов
+def get_all_customers():
+    try:
+        conn = sqlite3.connect(_DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM CUSTOMERS")
+        customers = cursor.fetchall()
+        conn.close()
+        customers_dict = {}
+        for customer in customers:
+            customer_info = {"NAME": customer[1], "PHONE": customer[2]}
+            customers_dict[str(customer[0])] = customer_info
+        conn.close()
+        return customers_dict
+    except sqlite3.DatabaseError as err:
+        logging.error(u'Method:' + sys._getframe().f_code.co_name + ' sqlite3.DatabaseError: ' + str(err) + '')
+
+
+#  добавить нового клиента
+def add_new_customer(chat_id):
+    now = datetime.now()
+    try:
+        conn = sqlite3.connect(_DB_PATH)
+        cursor = conn.cursor()
+        print('хуйхуй')
+        cursor.execute("INSERT INTO CUSTOMERS (\'CHAT_ID\', \'JOIN_DATE\') VALUES (\'" + str(chat_id)
+                       + "\', \'" + datetime.strftime(now, "%Y-%m-%d %H:%M:%S") + "\')")
+        conn.commit()
+        conn.close()
+    except sqlite3.DatabaseError as err:
+        logging.error(u'Method:' + sys._getframe().f_code.co_name + ' sqlite3.DatabaseError: ' + str(err) + '')
+
+
+#  Добавить имя клиента
+def add_customer_name(chat_id, name):
+    try:
+        conn = sqlite3.connect(_DB_PATH)
+        cursor = conn.cursor()
+        print('хуйхуй2')
+        cursor.execute("UPDATE CUSTOMERS SET NAME = \'" + name + "\' WHERE CHAT_ID = \'" + str(chat_id) + "\'")
+        conn.commit()
+        conn.close()
+    except sqlite3.DatabaseError as err:
+        logging.error(u'Method:' + sys._getframe().f_code.co_name + ' sqlite3.DatabaseError: ' + str(err) + '')
+
 '''
 # Сохранить вещи в БД
 def save_things(results, company):
