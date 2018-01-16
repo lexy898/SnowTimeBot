@@ -10,6 +10,14 @@ logging.basicConfig(format=u'%(levelname)-8s [%(asctime)s] %(message)s', level=l
 _DB_PATH = "hire.db3"
 
 
+# фабрика для превращения результата запроса в словарь
+def dict_factory(cursor, row):
+    d = {}
+    for idx, col in enumerate(cursor.description):
+        d[col[0]] = row[idx]
+    return d
+
+
 # Получить аксессуары по типу
 def get_things_by_type(type_of_thing):
     try:
@@ -53,14 +61,14 @@ def get_thing_by_ID(thing_id):
 def get_all_customers():
     try:
         conn = sqlite3.connect(_DB_PATH)
+        conn.row_factory = dict_factory
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM CUSTOMERS")
         customers = cursor.fetchall()
         conn.close()
         customers_dict = {}
         for customer in customers:
-            customer_info = {"NAME": customer[1], "PHONE": customer[2]}
-            customers_dict[str(customer[0])] = customer_info
+            customers_dict[str(customer['CHAT_ID'])] = customer
         conn.close()
         return customers_dict
     except sqlite3.DatabaseError as err:
@@ -73,7 +81,6 @@ def add_new_customer(chat_id):
     try:
         conn = sqlite3.connect(_DB_PATH)
         cursor = conn.cursor()
-        print('хуйхуй')
         cursor.execute("INSERT INTO CUSTOMERS (\'CHAT_ID\', \'JOIN_DATE\') VALUES (\'" + str(chat_id)
                        + "\', \'" + datetime.strftime(now, "%Y-%m-%d %H:%M:%S") + "\')")
         conn.commit()
@@ -82,13 +89,16 @@ def add_new_customer(chat_id):
         logging.error(u'Method:' + sys._getframe().f_code.co_name + ' sqlite3.DatabaseError: ' + str(err) + '')
 
 
-#  Добавить имя клиента
-def add_customer_name(chat_id, name):
+#  Добавить инфу по клиенту
+def add_customer_info(chat_id, customer_info):
     try:
         conn = sqlite3.connect(_DB_PATH)
         cursor = conn.cursor()
-        print('хуйхуй2')
-        cursor.execute("UPDATE CUSTOMERS SET NAME = \'" + name + "\' WHERE CHAT_ID = \'" + str(chat_id) + "\'")
+        cursor.execute("UPDATE CUSTOMERS "
+                       "SET NAME = \'" + str(customer_info['NAME']) + "\', "
+                       "LAST_NAME = \'" + str(customer_info['LAST_NAME']) + "\', "
+                       "USERNAME = \'" + str(customer_info['USERNAME']) + "\' "
+                       "WHERE CHAT_ID = \'" + str(chat_id) + "\'")
         conn.commit()
         conn.close()
     except sqlite3.DatabaseError as err:

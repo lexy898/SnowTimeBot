@@ -52,7 +52,7 @@ def create_edit_preorder_page(items_list):
         markup.row(*row)
         message = {'message_text': message_text, 'markup': markup}
     else:
-        message = main_menu.create_main_menu()
+        message = main_menu.create_main_menu(())
     return message
 
 
@@ -80,5 +80,19 @@ def create_delete_approve_page(items_list):
         message = main_menu.create_main_menu()
     return message
 
-def create_ask_phone_page():
-    pass
+
+def create_ask_phone_page(customer_phone):
+    message_text =''
+    markup = types.InlineKeyboardMarkup()
+    if customer_phone is not None:
+        message_text += "<b>Ваш телефон: " + customer_phone + "?</b>"
+        row = [types.InlineKeyboardButton("Да", callback_data="phone-approved"),
+               types.InlineKeyboardButton("Указать другой", callback_data="change-phone-number")]
+        markup.row(*row)
+    else:
+        message_text += "<b>Укажите, пожалуйста, Ваш номер для связи</b>"
+        row = [types.InlineKeyboardButton("Отправить свой", callback_data="send-phone-number", request_contact=True),
+               types.InlineKeyboardButton("Указать другой", callback_data="change-phone-number")]
+        markup.row(*row)
+    message = {'message_text': message_text, 'markup': markup}
+    return message

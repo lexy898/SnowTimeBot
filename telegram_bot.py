@@ -30,7 +30,7 @@ customer_mngmnt = customer_management.CustomerManagement()  # управлени
 def get_main_menu(message):
     chat_id = str(message.chat.id)
     if not customer_mngmnt.check_existence_client(chat_id):
-        customer_mngmnt.add_customer_name(chat_id, message.chat.first_name)
+        customer_mngmnt.add_customer_info(message)
     try:
         preorder = preorders_list[chat_id]
     except KeyError:
@@ -49,11 +49,11 @@ def get_main_menu_from_outside(call):
     except KeyError:
         preorder = []
     message = main_menu.create_main_menu(preorder)
-    bot.edit_message_text(message['message_text'], call.from_user.id, call.message.message_id,
-                          reply_markup=message['markup'])
+    bot.send_sticker(chat_id, 'CAADAgADAgAD2INrCdsC2_uAN23lAg')
+    bot.send_message(chat_id, message['message_text'], reply_markup=message['markup'])
 
 
-#  Открыть выбранный item
+#  Открыть выбранный item / удалить вещь из предзаказа
 @bot.message_handler(content_types=['text'])
 def open_item(message):
     chat_id = message.chat.id
@@ -257,21 +257,25 @@ def add_to_preorder(call):
 @bot.callback_query_handler(func=lambda call: call.data == 'save-preorder')
 def save_preorder(call):
     chat_id = str(call.message.chat.id)
-    if customer_mngmnt.check_existence_phone(chat_id):
-        print('Телефон есть')
-    else:
-        print('Телефона  нет')
-    #message = preorder.create_ask_phone_page(chat_id, '')
+    message = preorder.create_ask_phone_page(customer_mngmnt.get_customer_phone(chat_id))
+    bot.edit_message_text(message['message_text'], call.from_user.id, call.message.message_id,
+                          reply_markup=message['markup'], parse_mode='HTML')
+    bot.answer_callback_query(call.id, text="")
 
 
 # Редактировать предзаказ
 @bot.callback_query_handler(func=lambda call: call.data == 'edit-preorder')
 def edit_preorder(call):
-    chat_id = call.message.chat.id
-    message = preorder.create_edit_preorder_page(preorders_list[chat_id])
-    bot.edit_message_text(message['message_text'], call.from_user.id, call.message.message_id,
-                          reply_markup=message['markup'], parse_mode='HTML')
-    bot.answer_callback_query(call.id, text="")
+    try:
+        chat_id = call.message.chat.id
+        message = preorder.create_edit_preorder_page(preorders_list[chat_id])
+        bot.edit_message_text(message['message_text'], call.from_user.id, call.message.message_id,
+                              reply_markup=message['markup'], parse_mode='HTML')
+        bot.answer_callback_query(call.id, text="")
+    except KeyError as err:
+        bot.answer_callback_query(call.id, text="Что-то пошло не так. Попробуйте, пожалуйста, снова.")
+        get_main_menu(call.message)
+        logging.error(u'Method:' + sys._getframe().f_code.co_name + ' KeyError: ' + str(err) + '')
 
 
 #  Удалить предзаказ. Появляется страничка подтверждения
@@ -295,9 +299,7 @@ def delete_preorder_yes(call):
     try:
         chat_id = call.message.chat.id
         del preorders_list[chat_id]
-        message = main_menu.create_main_menu(())
-        bot.edit_message_text(message['message_text'], call.from_user.id, call.message.message_id,
-                              reply_markup=message['markup'], parse_mode='HTML')
+        get_main_menu(call.message)
         bot.answer_callback_query(call.id, text="Заказ успешно удален")
     except KeyError as err:
         bot.answer_callback_query(call.id, text="Что-то пошло не так. Попробуйте, пожалуйста, снова.")
@@ -320,6 +322,10 @@ def delete_preorder_no(call):
         logging.error(u'Method:' + sys._getframe().f_code.co_name + ' KeyError: ' + str(err) + '')
 
 
+#  Телефона в базе нет, отправить номер учетной записи Telegram
+@bot.callback_query_handler(func=lambda call: call.data == 'send-phone-number')
+def send_phone_number(call):
+    pass
 
 
 bot.polling(none_stop=True, interval=0)

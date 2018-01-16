@@ -16,13 +16,16 @@ class CustomerManagement:
             self.add_customer(chat_id)
             return False
 
-    def check_existence_phone(self, chat_id):
-        customer_info = self._customers[chat_id]
-        if customer_info['PHONE'] is not None:
-            return True
-        else:
-            return False
+    def get_customer_phone(self, chat_id):
+        try:
+            customer_info = self._customers[chat_id]
+            return customer_info['PHONE']
+        except KeyError:
+            return None
 
-    def add_customer_name(self, chat_id, name):
-        self._customers[chat_id].update({'NAME': name})
-        sql_requests.add_customer_name(chat_id, name)
+    def add_customer_info(self, message):
+        chat_id = str(message.chat.id)
+        self._customers[chat_id].update({'NAME':      message.chat.first_name,
+                                         'LAST_NAME': message.chat.last_name,
+                                         'USERNAME':  message.chat.username})
+        sql_requests.add_customer_info(chat_id, self._customers[chat_id])
