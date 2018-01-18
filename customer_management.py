@@ -25,7 +25,17 @@ class CustomerManagement:
 
     def add_customer_info(self, message):
         chat_id = str(message.chat.id)
-        self._customers[chat_id].update({'NAME':      message.chat.first_name,
+        self._customers[chat_id].update({'NAME': message.chat.first_name,
                                          'LAST_NAME': message.chat.last_name,
-                                         'USERNAME':  message.chat.username})
+                                         'USERNAME': message.chat.username})
         sql_requests.add_customer_info(chat_id, self._customers[chat_id])
+
+    def update_customer_phone(self, chat_id, phone):
+        try:
+            customer_info = self._customers[chat_id]
+            customer_info['PHONE'] = phone
+            self._customers[chat_id] = customer_info
+
+            sql_requests.update_customer_phone(chat_id, phone)
+        except KeyError:
+            pass

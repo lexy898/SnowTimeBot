@@ -6,11 +6,10 @@ import logging
 import config
 import main_menu
 import preorder
-import sql_requests
 from telegramcalendar import create_calendar
 import pagination
-from telebot import types
 import customer_management
+import input_validator
 
 logging.basicConfig(format=u'%(levelname)-8s [%(asctime)s] %(message)s', level=logging.ERROR, filename=u'log.txt')
 
@@ -23,6 +22,7 @@ current_type_of_thing = {}  # Текущий тип вещи, закреплен
 current_page = {}  # Текущая страница, закрепленная за пользователем
 preorders_list = {}  # Список предзаказов пользователей(корзины)
 customer_mngmnt = customer_management.CustomerManagement()  # управление клиентами
+input_validate = input_validator.InputValidator()
 
 
 # Создание главного меню
@@ -38,7 +38,7 @@ def get_main_menu(message):
     message_to_send = main_menu.create_main_menu(preorder)
     bot.send_sticker(chat_id, 'CAADAgADAgAD2INrCdsC2_uAN23lAg')
     bot.send_message(chat_id, message_to_send['message_text'], reply_markup=message_to_send['markup'])
-
+    input_validate.off_input_phone_mode(str(chat_id))  # Отключаем режим ввода телефона
 
 #  Переход на главное меню
 @bot.callback_query_handler(func=lambda call: call.data == 'back-to-main-menu')
@@ -51,28 +51,31 @@ def get_main_menu_from_outside(call):
     message = main_menu.create_main_menu(preorder)
     bot.send_sticker(chat_id, 'CAADAgADAgAD2INrCdsC2_uAN23lAg')
     bot.send_message(chat_id, message['message_text'], reply_markup=message['markup'])
+    input_validate.off_input_phone_mode(str(chat_id))  # Отключаем режим ввода телефона
 
 
 #  Открыть выбранный item / удалить вещь из предзаказа
 @bot.message_handler(content_types=['text'])
 def open_item(message):
     chat_id = message.chat.id
+    message_to_send = {}
     try:
         if '/item' in message.text:
-            item_number = message.text[6:]
-            message_text = sql_requests.get_url_by_item(item_number)
-            markup = types.InlineKeyboardMarkup(row_width=1)
-            row = [types.InlineKeyboardButton("Назад", callback_data="back-to-pagination"),
-                   types.InlineKeyboardButton("Добавить в заказ", callback_data="save-to-preorder" + item_number)]
-            markup.row(*row)
-            bot.send_message(chat_id, message_text, reply_markup=markup)
+            item_id = message.text[6:]
+            message_to_send.update(preorder.create_item_view_page(item_id))
         if '/delete_from_preorder' in message.text:
             item_number = message.text[22:]
             preorder_items = preorders_list[chat_id]
             preorder_items.remove(item_number)
             preorders_list[chat_id] = preorder_items
-            message = preorder.create_edit_preorder_page(preorders_list[chat_id])
-            bot.send_message(chat_id, message['message_text'], reply_markup=message['markup'], parse_mode='HTML')
+            message_to_send.update(preorder.create_edit_preorder_page(preorders_list[chat_id]))
+        if input_validate.check_input_phone_mode(str(chat_id)):
+            if input_validate.validation_phone(message.text):
+                message_to_send.update(preorder.create_preorder_posted_page())
+                customer_mngmnt.update_customer_phone(str(chat_id), message.text)
+            else:
+                message_to_send.update(preorder.create_ask_again_phone_page())
+        bot.send_message(chat_id, message_to_send['message_text'], reply_markup=message_to_send['markup'], parse_mode='HTML')
     except KeyError as err:
         get_main_menu(message)
         logging.error(u'Method:' + sys._getframe().f_code.co_name + ' KeyError: ' + str(err) + '')
@@ -257,6 +260,7 @@ def add_to_preorder(call):
 @bot.callback_query_handler(func=lambda call: call.data == 'save-preorder')
 def save_preorder(call):
     chat_id = str(call.message.chat.id)
+    input_validate.set_input_phone_mode(chat_id)  # Включаем режим ввода телефона
     message = preorder.create_ask_phone_page(customer_mngmnt.get_customer_phone(chat_id))
     bot.edit_message_text(message['message_text'], call.from_user.id, call.message.message_id,
                           reply_markup=message['markup'], parse_mode='HTML')
@@ -322,10 +326,19 @@ def delete_preorder_no(call):
         logging.error(u'Method:' + sys._getframe().f_code.co_name + ' KeyError: ' + str(err) + '')
 
 
-#  Телефона в базе нет, отправить номер учетной записи Telegram
-@bot.callback_query_handler(func=lambda call: call.data == 'send-phone-number')
-def send_phone_number(call):
-    pass
+#  Телефон изменять не нужно
+@bot.callback_query_handler(func=lambda call: call.data == 'phone-approved')
+def phone_approved(call):
+    message = preorder.create_preorder_posted_page()
+    bot.edit_message_text(message['message_text'], call.from_user.id, call.message.message_id,
+                          reply_markup=message['markup'], parse_mode='HTML')
+
+
+@bot.callback_query_handler(func=lambda call: call.data == 'change-phone-number')
+def change_phone_number(call):
+    message = preorder.create_change_phone_number_page()
+    bot.edit_message_text(message, call.from_user.id, call.message.message_id,
+                          parse_mode='HTML')
 
 
 bot.polling(none_stop=True, interval=0)

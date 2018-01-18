@@ -4,6 +4,18 @@ import main_menu
 import sql_requests
 
 
+# Создать страницу просмотра единицы инвентаря
+def create_item_view_page(item_id):
+    message_text = sql_requests.get_url_by_item(item_id)
+    markup = types.InlineKeyboardMarkup()
+    row = [types.InlineKeyboardButton("Назад", callback_data="back-to-pagination"),
+           types.InlineKeyboardButton("Добавить в заказ", callback_data="save-to-preorder" + item_id)]
+    markup.row(*row)
+    message = {'message_text': message_text, 'markup': markup}
+    return message
+
+
+#  Создать страницу с отображением текущего предзаказа
 def create_preorder_page(items_list):
     preorder_items = []
     message_text = '<b>Ваш заказ:</b>\n\n'
@@ -29,6 +41,7 @@ def create_preorder_page(items_list):
     return message
 
 
+# Создать страницу редактирования предзаказа
 def create_edit_preorder_page(items_list):
     if items_list:
         preorder_items = []
@@ -56,6 +69,7 @@ def create_edit_preorder_page(items_list):
     return message
 
 
+# создать страницу с подтверждением удаления предзаказа
 def create_delete_approve_page(items_list):
     if items_list:
         preorder_items = []
@@ -81,8 +95,9 @@ def create_delete_approve_page(items_list):
     return message
 
 
+#  Создать страницу с запросом номера телефона
 def create_ask_phone_page(customer_phone):
-    message_text =''
+    message_text = ''
     markup = types.InlineKeyboardMarkup()
     if customer_phone is not None:
         message_text += "<b>Ваш телефон: " + customer_phone + "?</b>"
@@ -90,9 +105,34 @@ def create_ask_phone_page(customer_phone):
                types.InlineKeyboardButton("Указать другой", callback_data="change-phone-number")]
         markup.row(*row)
     else:
-        message_text += "<b>Укажите, пожалуйста, Ваш номер для связи</b>"
-        row = [types.InlineKeyboardButton("Отправить свой", callback_data="send-phone-number", request_contact=True),
-               types.InlineKeyboardButton("Указать другой", callback_data="change-phone-number")]
-        markup.row(*row)
+        message_text += "Напишите, пожалуйста, Ваш номер для связи\n" \
+                        "в формате <b>79xxxxxxxxx</b>"
+    message = {'message_text': message_text, 'markup': markup}
+    return message
+
+
+#  Создать страницу с повторным запросом номера, если пользователь ввел номер неправильно
+def create_ask_again_phone_page():
+    message_text = 'Номер введен неправильно.\n' \
+                   'Пожалуйста, попробуйте ввести снова.\n' \
+                   'Номер должен быть в формате <b>79xxxxxxxxx</b>'
+    markup = types.InlineKeyboardMarkup()
+    message = {'message_text': message_text, 'markup': markup}
+    return message
+
+
+def create_change_phone_number_page():
+    message_text = "Напишите, пожалуйста, Ваш новый номер для связи\n" \
+                "в формате <b>79xxxxxxxxx</b>"
+    return message_text
+
+
+def create_preorder_posted_page():
+    markup = types.InlineKeyboardMarkup()
+    message_text = 'Спасибо!\n' \
+                   'Заказ отправлен.\n' \
+                   'Мы свяжемся с вами для подтверждения'
+    row = [types.InlineKeyboardButton("Вернуться на главное меню", callback_data="back-to-main-menu")]
+    markup.row(*row)
     message = {'message_text': message_text, 'markup': markup}
     return message

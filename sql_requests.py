@@ -104,6 +104,18 @@ def add_customer_info(chat_id, customer_info):
     except sqlite3.DatabaseError as err:
         logging.error(u'Method:' + sys._getframe().f_code.co_name + ' sqlite3.DatabaseError: ' + str(err) + '')
 
+
+#  Обновить номер телефона клиента
+def update_customer_phone(chat_id, phone):
+    try:
+        conn = sqlite3.connect(_DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute("UPDATE CUSTOMERS "
+                       "SET PHONE = \'" + str(phone) + "\' WHERE CHAT_ID = \'" + str(chat_id) + "\'")
+        conn.commit()
+        conn.close()
+    except sqlite3.DatabaseError as err:
+        logging.error(u'Method:' + sys._getframe().f_code.co_name + ' sqlite3.DatabaseError: ' + str(err) + '')
 '''
 # Сохранить вещи в БД
 def save_things(results, company):
