@@ -31,6 +31,18 @@ def select_query(query):
         logging.error(u'Method:'+sys._getframe().f_code.co_name+' sqlite3.DatabaseError: ' + str(err) + ' Query: '+query)
 
 
+# Запрос типа UPDATE или INSERT
+def update_insert_query(query):
+    try:
+        conn = sqlite3.connect(_DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute(query)
+        conn.commit()
+        conn.close()
+    except sqlite3.DatabaseError as err:
+        logging.error(u'Method:' + sys._getframe().f_code.co_name + ' sqlite3.DatabaseError: ' + str(err) + ' Query: ' + query)
+
+
 # Получить аксессуары по типу
 def get_things_by_type(type_of_thing):
     query = "SELECT * FROM ACCESSORIES WHERE TYPE = \"" + str(type_of_thing) + "\""
@@ -70,44 +82,25 @@ def get_all_customers():
 #  добавить нового клиента
 def add_new_customer(chat_id):
     now = datetime.now()
-    try:
-        conn = sqlite3.connect(_DB_PATH)
-        cursor = conn.cursor()
-        cursor.execute("INSERT INTO CUSTOMERS (\'CHAT_ID\', \'JOIN_DATE\') VALUES (\'" + str(chat_id)
-                       + "\', \'" + datetime.strftime(now, "%Y-%m-%d %H:%M:%S") + "\')")
-        conn.commit()
-        conn.close()
-    except sqlite3.DatabaseError as err:
-        logging.error(u'Method:' + sys._getframe().f_code.co_name + ' sqlite3.DatabaseError: ' + str(err) + '')
+    query = "INSERT INTO CUSTOMERS (\'CHAT_ID\', \'JOIN_DATE\') VALUES (\'" + str(chat_id) + \
+            "\', \'" + datetime.strftime(now, "%Y-%m-%d %H:%M:%S") + "\')"
+    update_insert_query(query)
 
 
 #  Добавить инфу по клиенту
 def add_customer_info(chat_id, customer_info):
-    try:
-        conn = sqlite3.connect(_DB_PATH)
-        cursor = conn.cursor()
-        cursor.execute("UPDATE CUSTOMERS "
-                       "SET NAME = \'" + str(customer_info['NAME']) + "\', "
-                       "LAST_NAME = \'" + str(customer_info['LAST_NAME']) + "\', "
-                       "USERNAME = \'" + str(customer_info['USERNAME']) + "\' "
-                       "WHERE CHAT_ID = \'" + str(chat_id) + "\'")
-        conn.commit()
-        conn.close()
-    except sqlite3.DatabaseError as err:
-        logging.error(u'Method:' + sys._getframe().f_code.co_name + ' sqlite3.DatabaseError: ' + str(err) + '')
+    query = "UPDATE CUSTOMERS SET NAME = \'" + str(customer_info['NAME']) + "\', " \
+             "LAST_NAME = \'" + str(customer_info['LAST_NAME']) + "\', " \
+             "USERNAME = \'" + str(customer_info['USERNAME']) + "\' " \
+             "WHERE CHAT_ID = \'" + str(chat_id) + "\'"
+    update_insert_query(query)
 
 
 #  Обновить номер телефона клиента
 def update_customer_phone(chat_id, phone):
-    try:
-        conn = sqlite3.connect(_DB_PATH)
-        cursor = conn.cursor()
-        cursor.execute("UPDATE CUSTOMERS "
-                       "SET PHONE = \'" + str(phone) + "\' WHERE CHAT_ID = \'" + str(chat_id) + "\'")
-        conn.commit()
-        conn.close()
-    except sqlite3.DatabaseError as err:
-        logging.error(u'Method:' + sys._getframe().f_code.co_name + ' sqlite3.DatabaseError: ' + str(err) + '')
+    query = "UPDATE CUSTOMERS SET PHONE = \'" + str(phone) + "\' WHERE CHAT_ID = \'" + str(chat_id) + "\'"
+    update_insert_query(query)
+
 '''
 # Сохранить вещи в БД
 def save_things(results, company):
