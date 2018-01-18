@@ -18,43 +18,35 @@ def dict_factory(cursor, row):
     return d
 
 
-# Получить аксессуары по типу
-def get_things_by_type(type_of_thing):
+# Запрос типа SELECT
+def select_query(query):
     try:
         conn = sqlite3.connect(_DB_PATH)
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM ACCESSORIES WHERE TYPE = \"" + str(type_of_thing) + "\"")
-        things = cursor.fetchall()
+        cursor.execute(query)
+        result = cursor.fetchall()
         conn.close()
-        return things
+        return result
     except sqlite3.DatabaseError as err:
-        logging.error(u'Method:'+sys._getframe().f_code.co_name+' sqlite3.DatabaseError: ' + str(err) + '')
+        logging.error(u'Method:'+sys._getframe().f_code.co_name+' sqlite3.DatabaseError: ' + str(err) + ' Query: '+query)
+
+
+# Получить аксессуары по типу
+def get_things_by_type(type_of_thing):
+    query = "SELECT * FROM ACCESSORIES WHERE TYPE = \"" + str(type_of_thing) + "\""
+    return select_query(query)
 
 
 #  Получить ссылку на изображение по ID
 def get_url_by_item(item):
-    try:
-        conn = sqlite3.connect(_DB_PATH)
-        cursor = conn.cursor()
-        cursor.execute("SELECT PICTURE_URL FROM ACCESSORIES WHERE ID = \"" + str(item) + "\"")
-        url = cursor.fetchone()[0]
-        conn.close()
-        return url
-    except sqlite3.DatabaseError as err:
-        logging.error(u'Method:'+sys._getframe().f_code.co_name+' sqlite3.DatabaseError: ' + str(err) + '')
+    query = "SELECT PICTURE_URL FROM ACCESSORIES WHERE ID = \"" + str(item) + "\""
+    return select_query(query)[0]
 
 
 # Получить аксессуар по ID
 def get_thing_by_ID(thing_id):
-    try:
-        conn = sqlite3.connect(_DB_PATH)
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM ACCESSORIES WHERE ID = \"" + str(thing_id) + "\"")
-        thing = cursor.fetchone()
-        conn.close()
-        return thing
-    except sqlite3.DatabaseError as err:
-        logging.error(u'Method:'+sys._getframe().f_code.co_name+' sqlite3.DatabaseError: ' + str(err) + '')
+    query = "SELECT * FROM ACCESSORIES WHERE ID = \"" + str(thing_id) + "\""
+    return select_query(query)[0]
 
 
 #  Загрузить всех клиентов
