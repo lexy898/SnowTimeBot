@@ -5,7 +5,7 @@ import sql_requests
 ELEMENTS_ON_PAGE = 3
 
 
-def create_list(type_of_thing, page):
+def create_list(type_of_thing, page, date):
     accessories = sql_requests.get_things_by_type(type_of_thing)
 
     page_count = ceil(len(accessories) / ELEMENTS_ON_PAGE)
@@ -14,7 +14,7 @@ def create_list(type_of_thing, page):
     markup = types.InlineKeyboardMarkup()
     position = page * ELEMENTS_ON_PAGE
     message_text = ''
-
+    message_text += '📆На дату <b>' + date + '</b> есть такой инвентарь:\n\n'
     for i in range(ELEMENTS_ON_PAGE):
         if position < limit:
             try:
@@ -24,7 +24,7 @@ def create_list(type_of_thing, page):
                 thing = accessories[position]
                 page = 0
             if thing[1] is not None:
-                message_text += '<b>' + thing[1].upper() + '</b>\n'
+                message_text += '<b>🚩' + thing[1].upper() + '</b>\n'
             if thing[4] is not None:
                 message_text += 'Размер: ' + thing[4] + '\n'
             if thing[5] is not None:
@@ -32,10 +32,8 @@ def create_list(type_of_thing, page):
             if thing[3] is not None:
                 message_text += 'Посмотреть: /item_' + str(thing[0]) + '\n\n'
             position += 1
-    if message_text == '':
-        message_text = 'Инвентарь отсутствует'
-        row = [types.InlineKeyboardButton("Вернуться на главное меню", callback_data="back-to-main-menu")]
-        markup.row(*row)
+    if not accessories:
+        message_text = '📆На дату <b>' + date + '</b> Ничего нет 😧\n'
     else:
         if page == 0:
             row = [types.InlineKeyboardButton(" ", callback_data="ignore")]
@@ -46,8 +44,10 @@ def create_list(type_of_thing, page):
         else:
             row.append(types.InlineKeyboardButton(">", callback_data="next-page"))
         markup.row(*row)
-        row = [types.InlineKeyboardButton("Вернуться на главное меню", callback_data="back-to-main-menu")]
-        markup.row(*row)
+    row = [types.InlineKeyboardButton("Изменить дату", callback_data="change-preorder-date")]
+    markup.row(*row)
+    row = [types.InlineKeyboardButton("Вернуться на главное меню", callback_data="back-to-main-menu")]
+    markup.row(*row)
     message = {'message_text': message_text, 'markup': markup}
     return message
 

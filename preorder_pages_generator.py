@@ -30,7 +30,7 @@ def create_preorder_page(items_list):
             message_text += 'Размер: ' + item[4] + '\n'
         if item[5] is not None:
             message_text += 'Подходит для роста: ' + item[5] + '\n\n'
-    row = [types.InlineKeyboardButton("Добавить что-то еще", callback_data="add-to-preorder"),
+    row = [types.InlineKeyboardButton("Добавить что-то еще", callback_data="go-to-pagination"),
            types.InlineKeyboardButton("Оформить заказ", callback_data="save-preorder")]
     markup.row(*row)
     row = [types.InlineKeyboardButton("Редактировать заказ", callback_data="edit-preorder")]
@@ -59,7 +59,7 @@ def create_edit_preorder_page(items_list):
                 message_text += 'Подходит для роста: ' + item[5] + '\n'
             message_text += '<b>Удалить из заказа:</b> /delete_from_preorder_' + str(item[0]) + '\n\n'
             #  callback_data используется аналогичная кнопке "нет" при отмене удаления предзаказа
-        row = [types.InlineKeyboardButton("Сохранить", callback_data="delete-preorder-no")]
+        row = [types.InlineKeyboardButton("Сохранить", callback_data="go-to-preorder")]
         markup.row(*row)
         row = [types.InlineKeyboardButton("Удалить заказ", callback_data="delete-preorder")]
         markup.row(*row)
@@ -87,11 +87,11 @@ def create_delete_approve_page(items_list):
                 message_text += 'Подходит для роста: ' + item[5] + '\n\n'
 
         row = [types.InlineKeyboardButton("Да", callback_data="delete-preorder-yes"),
-               types.InlineKeyboardButton("Нет", callback_data="delete-preorder-no")]
+               types.InlineKeyboardButton("Нет", callback_data="go-to-preorder")]
         markup.row(*row)
         message = {'message_text': message_text, 'markup': markup}
     else:
-        message = main_menu.create_main_menu()
+        message = main_menu.create_main_menu({})
     return message
 
 
@@ -103,6 +103,8 @@ def create_ask_phone_page(customer_phone):
         message_text += "<b>Ваш телефон: " + customer_phone + "?</b>"
         row = [types.InlineKeyboardButton("Да", callback_data="phone-approved"),
                types.InlineKeyboardButton("Указать другой", callback_data="change-phone-number")]
+        markup.row(*row)
+        row = [types.InlineKeyboardButton("⬅ Назад", callback_data="go-to-preorder")]
         markup.row(*row)
     else:
         message_text += "Напишите, пожалуйста, Ваш номер для связи\n" \
@@ -121,12 +123,18 @@ def create_ask_again_phone_page():
     return message
 
 
+#  Создать страничку изменения существующего номера телефона клиента
 def create_change_phone_number_page():
     message_text = "Напишите, пожалуйста, Ваш новый номер для связи\n" \
                 "в формате <b>79xxxxxxxxx</b>"
-    return message_text
+    markup = types.InlineKeyboardMarkup()
+    row = [types.InlineKeyboardButton("⬅ Назад", callback_data="go-to-preorder")]
+    markup.row(*row)
+    message = {'message_text': message_text, 'markup': markup}
+    return message
 
 
+#  Создать страничку оформленного заказа
 def create_preorder_posted_page():
     markup = types.InlineKeyboardMarkup()
     message_text = 'Спасибо!\n' \
@@ -136,3 +144,19 @@ def create_preorder_posted_page():
     markup.row(*row)
     message = {'message_text': message_text, 'markup': markup}
     return message
+
+
+#  Создать страничку, предупреждающую о последствиях изменения даты предзаказа
+def create_warning_change_date_page():
+    message_text = ''
+    markup = types.InlineKeyboardMarkup()
+    message_text += '<b>Внимание!</b> \n' \
+                    'Ваш текущий заказ будет удален.\n' \
+                    'На новую дату нужно будет собрать заказ заново'
+    row = [types.InlineKeyboardButton("Изменить дату", callback_data="change_preorder_date_approved"),
+           types.InlineKeyboardButton("Отмена", callback_data="go-to-pagination")]
+    markup.row(*row)
+    message = {'message_text': message_text, 'markup': markup}
+    return message
+
+

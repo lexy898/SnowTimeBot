@@ -1,6 +1,6 @@
 import sqlite3
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import os
 
@@ -72,7 +72,7 @@ def get_all_customers():
         conn.close()
         customers_dict = {}
         for customer in customers:
-            customers_dict[str(customer['CHAT_ID'])] = customer
+            customers_dict[customer['CHAT_ID']] = customer
         conn.close()
         return customers_dict
     except sqlite3.DatabaseError as err:
@@ -81,9 +81,9 @@ def get_all_customers():
 
 #  добавить нового клиента
 def add_new_customer(chat_id):
-    now = datetime.now()
+    now = datetime.strftime(datetime.now(), "%Y-%m-%d %H:%M:%S")
     query = "INSERT INTO CUSTOMERS (\'CHAT_ID\', \'JOIN_DATE\') VALUES (\'" + str(chat_id) + \
-            "\', \'" + datetime.strftime(now, "%Y-%m-%d %H:%M:%S") + "\')"
+            "\', \'" + now + "\')"
     update_insert_query(query)
 
 
@@ -101,7 +101,36 @@ def update_customer_phone(chat_id, phone):
     query = "UPDATE CUSTOMERS SET PHONE = \'" + str(phone) + "\' WHERE CHAT_ID = \'" + str(chat_id) + "\'"
     update_insert_query(query)
 
-'''
+
+#  Создать заказ
+def create_order(customer_info, order):
+    chat_id = str(customer_info['CHAT_ID'])
+    now = datetime.strftime(datetime.now(), "%Y-%m-%d %H:%M:%S")
+    start_date = datetime.strptime(order['START_DATE'], "%Y-%m-%d %H:%M:%S")
+    end_date = datetime.strftime(start_date + timedelta(days=1), "%Y-%m-%d %H:%M:%S")
+    order_id = '' # id заказа
+    query = 'INSERT INTO ORDERS (CHAT_ID, CREATED_DATE) VALUES ' \
+            '(\'' + chat_id + '\', \'' + now + '\')'
+    try:
+        conn = sqlite3.connect(_DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute(query) # Создаем заказ в таблице ORDERS
+        conn.commit()
+        cursor.execute('SELECT ORDER_ID FROM ORDERS WHERE rowid=last_insert_rowid();') # Получаем ID свежесозданного заказа
+        order_id += str(cursor.fetchone()[0])
+        for order_item in order['ITEM_LIST']:
+            query = 'INSERT INTO ORDERS_DETAILS (ORDER_ID, CHAT_ID, ITEM_ID, START_DATE, END_DATE, ' \
+                    'PHONE, STATUS) VALUES (\''+ order_id +'\', \''+ chat_id +'\', \''+ str(order_item) +'\', ' \
+                    '\'' + order['START_DATE'] + '\', \'' + end_date + '\', \'' + str(customer_info['PHONE']) +'\', \'NEW\')'
+            cursor.execute(query)
+        conn.commit()
+        conn.close()
+        return order_id
+    except sqlite3.DatabaseError as err:
+        logging.error(u'Method:' + sys._getframe().f_code.co_name + ' sqlite3.DatabaseError: ' + str(err) + ' Query: ' + query)
+        return None
+
+'''     
 # Сохранить вещи в БД
 def save_things(results, company):
     default = "-"
