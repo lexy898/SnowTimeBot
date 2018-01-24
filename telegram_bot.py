@@ -2,7 +2,6 @@ import datetime
 import sys
 import telebot
 import logging
-import time
 import config
 import main_menu
 import order_management

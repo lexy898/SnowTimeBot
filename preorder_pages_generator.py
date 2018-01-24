@@ -17,13 +17,13 @@ def create_item_view_page(item_id):
 
 #  Создать страницу с отображением текущего предзаказа
 def create_preorder_page(items_list):
-    preorder_items = []
+    items_with_attributes = []
     message_text = '<b>Ваш заказ:</b>\n\n'
     markup = types.InlineKeyboardMarkup()
 
     for item in items_list:
-        preorder_items.append(sql_requests.get_thing_by_ID(item))
-    for item in preorder_items:
+        items_with_attributes.append(sql_requests.get_thing_by_ID(item))  # Подтягиваются параметры предметов
+    for item in items_with_attributes:
         if item[1] is not None:
             message_text += '<b>' + item[1].upper() + '</b>\n'
         if item[4] is not None:
