@@ -31,6 +31,20 @@ def select_query(query):
         logging.error(u'Method:'+sys._getframe().f_code.co_name+' sqlite3.DatabaseError: ' + str(err) + ' Query: '+query)
 
 
+# Запрос типа SELECT (Возврвщает таблицу в виде словаря, где ключ - название поля)
+def select_query_factory(query):
+    try:
+        conn = sqlite3.connect(_DB_PATH)
+        conn.row_factory = dict_factory
+        cursor = conn.cursor()
+        cursor.execute(query)
+        result = cursor.fetchall()
+        conn.close()
+        return result
+    except sqlite3.DatabaseError as err:
+        logging.error(u'Method:'+sys._getframe().f_code.co_name+' sqlite3.DatabaseError: ' + str(err) + ' Query: '+query)
+
+
 # Запрос типа UPDATE или INSERT
 def update_insert_query(query):
     try:
@@ -63,20 +77,12 @@ def get_thing_by_ID(thing_id):
 
 #  Загрузить всех клиентов
 def get_all_customers():
-    try:
-        conn = sqlite3.connect(_DB_PATH)
-        conn.row_factory = dict_factory
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM CUSTOMERS")
-        customers = cursor.fetchall()
-        conn.close()
-        customers_dict = {}
-        for customer in customers:
-            customers_dict[customer['CHAT_ID']] = customer
-        conn.close()
-        return customers_dict
-    except sqlite3.DatabaseError as err:
-        logging.error(u'Method:' + sys._getframe().f_code.co_name + ' sqlite3.DatabaseError: ' + str(err) + '')
+    query = 'SELECT * FROM CUSTOMERS'
+    customers = select_query_factory(query)
+    customers_dict = {}
+    for customer in customers:
+        customers_dict[customer['CHAT_ID']] = customer
+    return customers_dict
 
 
 #  добавить нового клиента
@@ -130,84 +136,33 @@ def create_order(customer_info, order):
         logging.error(u'Method:' + sys._getframe().f_code.co_name + ' sqlite3.DatabaseError: ' + str(err) + ' Query: ' + query)
         return None
 
-'''     
-# Сохранить вещи в БД
-def save_things(results, company):
-    default = "-"
-    try:
-        conn = sqlite3.connect(_DB_PATH)
-        cursor = conn.cursor()
-        cursor.execute("SELECT id FROM COMPANY WHERE company_name ='" + str(company) + "'")
-        company = cursor.fetchone()[0]
-        for i in range(len(results)):
-            thing = results[i]
-            cursor.execute("INSERT INTO result VALUES (\""
-                           + str(thing["defaultCode_string"]) + "\","
-                           + str(thing["productWhitePrice_rub_double"]) + ","
-                           + str(thing["actualPrice_rub_double"]) + ",\""
-                           + str(thing["name_text_ru"]).replace('"', '') + "\",\""
-                           + str(thing.get("sizes_ru_string_mv", default)) + "\", \""
-                           + str(company) + ","
-                           + datetime.strftime(datetime.now(), "%Y-%m-%d %H:%M:%S") + "\")")
-            conn.commit()
-        conn.close()
-    except sqlite3.DatabaseError as err:
-        print("Error: ", err)
+
+#  Метод возвращает все типы вещей
+def get_all_types_of_things():
+    query = 'SELECT * FROM TYPES_OF_THINGS'
+    types = select_query_factory(query)
+    types_dict = {}
+    for type in types:
+        types_dict[type['TYPE']] = type
+    return types_dict
 
 
-# Добавить новые вещи в БД
-def add_new_things(new_things, company):
-    try:
-        conn = sqlite3.connect(_DB_PATH)
-        cursor = conn.cursor()
-        cursor.execute("SELECT id FROM COMPANY WHERE company_name ='" + str(company) + "'")
-        company = cursor.fetchone()[0]
-        for thing in new_things:
-            print("INSERT INTO result VALUES (\""
-                  + str(thing[0]) + "\","
-                  + str(thing[1]) + ","
-                  + str(thing[2]) + ",\""
-                  + str(thing[3]).replace('"', '') + "\",\""
-                  + str(thing[4]) + "\","
-                  + str(company) + ",\""
-                  + datetime.strftime(datetime.now(), "%Y-%m-%d %H:%M:%S") + "\")")
-            cursor.execute("INSERT INTO result VALUES (\""
-                           + str(thing[0]) + "\","
-                           + str(thing[1]) + ","
-                           + str(thing[2]) + ",\""
-                           + str(thing[3]).replace('"', '') + "\",\""
-                           + str(thing[4]) + "\","
-                           + str(company) + ",\""
-                           + datetime.strftime(datetime.now(), "%Y-%m-%d %H:%M:%S") + "\")")
-            conn.commit()
-        conn.close()
-    except sqlite3.DatabaseError as err:
-        print("Error: ", err)
+#  Метод возвращает все скидочные комплекты
+def get_all_discount_sets():
+    query = 'SELECT * FROM DISCOUNT_SETS'
+    discount_sets = select_query_factory(query)
+    for d_set in discount_sets:
+        d_set['ITEMS'] = d_set['ITEMS'].split(',')
+    return discount_sets
 
 
-# Удалить вещь по ID
-def delete_thing_by_id(id):
-    try:
-        conn = sqlite3.connect(_DB_PATH)
-        cursor = conn.cursor()
-        cursor.execute("DELETE FROM result WHERE defaultCode_string = \"" + str(id) + "\"")
-        conn.commit()
-        conn.close()
-    except sqlite3.DatabaseError as err:
-        print("Error: ", err)
+# Метод возвращает список типов тех вещей, которые ему переданы
+def get_type_list_by_items(item_list):
+    type_list = []
+    for item in item_list:
+        query = 'SELECT TYPE FROM ACCESSORIES WHERE ID = ' + str(item)
+        type_list.append(select_query(query)[0][0])
+    return type_list
 
 
-# Получить коды вещей указанной компании
-def get_things(company):
-    try:
-        conn = sqlite3.connect(_DB_PATH)
-        cursor = conn.cursor()
-        cursor.execute("SELECT defaultCode_string FROM result WHERE COMPANY = "
-                       "(SELECT id FROM COMPANY WHERE company_name ='" + str(company) + "')")
-        things = cursor.fetchall()
-        result = [x[0] for x in things]
-        conn.close()
-        return result
-    except sqlite3.DatabaseError as err:
-        logging.error(u'' + str(err) + '')
-'''
+print(get_all_discount_sets())

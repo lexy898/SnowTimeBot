@@ -239,7 +239,7 @@ def save_to_preorder(call):
     chat_id = call.message.chat.id
     item_number = call.data[16:]
     order_mngmnt.add_item(chat_id, item_number)
-    message = preorder_pages_generator.create_preorder_page(order_mngmnt.get_item_list(chat_id))
+    message = preorder_pages_generator.create_preorder_page(order_mngmnt.get_preorder(chat_id))
     bot.edit_message_text(message['message_text'], call.from_user.id, call.message.message_id,
                           reply_markup=message['markup'], parse_mode='HTML')
     bot.answer_callback_query(call.id, text="Добавлено")
@@ -311,7 +311,7 @@ def delete_preorder_yes(call):
 def go_to_preorder(call):
     try:
         chat_id = call.message.chat.id
-        message = preorder_pages_generator.create_preorder_page(order_mngmnt.get_item_list(chat_id))
+        message = preorder_pages_generator.create_preorder_page(order_mngmnt.get_preorder(chat_id))
         bot.edit_message_text(message['message_text'], call.from_user.id, call.message.message_id,
                               reply_markup=message['markup'], parse_mode='HTML')
         bot.answer_callback_query(call.id, text="")

@@ -1,7 +1,10 @@
 from telebot import types
 
 import main_menu
+import price_management
 import sql_requests
+
+price_mngmnt = price_management.PriceManagement()
 
 
 # Создать страницу просмотра единицы инвентаря
@@ -16,20 +19,28 @@ def create_item_view_page(item_id):
 
 
 #  Создать страницу с отображением текущего предзаказа
-def create_preorder_page(items_list):
+def create_preorder_page(preorder):
     items_with_attributes = []
     message_text = '<b>Ваш заказ:</b>\n\n'
     markup = types.InlineKeyboardMarkup()
 
-    for item in items_list:
+    for item in preorder['ITEM_LIST']:
         items_with_attributes.append(sql_requests.get_thing_by_ID(item))  # Подтягиваются параметры предметов
     for item in items_with_attributes:
         if item[1] is not None:
-            message_text += '<b>' + item[1].upper() + '</b>\n'
+            message_text += '📌<b>' + item[1].upper() + '</b>\n'
         if item[4] is not None:
             message_text += 'Размер: ' + item[4] + '\n'
         if item[5] is not None:
-            message_text += 'Подходит для роста: ' + item[5] + '\n\n'
+            message_text += 'Подходит для роста: ' + item[5] + '\n'
+        message_text += '\n'
+    price_parameters = price_mngmnt.get_preorder_price_with_discount(preorder)
+    if price_parameters['discount'] != '0':
+        message_text += '\nСумма: ' + price_parameters['full_preorder_price'] + 'Р.\n'
+        message_text += 'Скидка за комплект: ' + price_parameters['discount'] + 'Р.\n'
+        message_text += '<b>Итого: ' + price_parameters['preorder_price'] + 'Р.</b>\n'
+    else:
+        message_text += '\nСумма: ' + price_parameters['full_preorder_price'] + 'Р.\n'
     row = [types.InlineKeyboardButton("Добавить что-то еще", callback_data="go-to-pagination"),
            types.InlineKeyboardButton("Оформить заказ", callback_data="save-preorder")]
     markup.row(*row)
