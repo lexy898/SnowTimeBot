@@ -5,7 +5,8 @@ import sql_requests
 
 def create_new_order_page(order):
     order_items = order['ITEM_LIST']
-    message_text = '<b>Новый заказ на :' + order['START_DATE'] + '</b>\n\n'
+    message_text = '<b>Новый заказ на:' + order['START_DATE'] + '</b>\n\n'
+    # message_text = 'Номер заказа:<b>#' + order['ORDER_ID'] + '</b>\n\n'
     markup = types.InlineKeyboardMarkup()
     items_with_attributes = []
 

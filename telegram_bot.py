@@ -4,8 +4,8 @@ import telebot
 import logging
 import config
 import main_menu
-import order_management
-import preorder_pages_generator
+from order import order_management
+from preorder import preorder_pages_generator
 from telegramcalendar import create_calendar
 import pagination
 import customer_management
@@ -58,7 +58,8 @@ def open_item(message):
         elif '/delete_from_preorder' in message.text:
             item_number = message.text[22:]
             order_mngmnt.remove_item(chat_id, item_number)
-            message_to_send.update(preorder_pages_generator.create_edit_preorder_page(order_mngmnt.get_item_list(chat_id)))
+            message_to_send.update(
+                preorder_pages_generator.create_edit_preorder_page(order_mngmnt.get_item_list(chat_id)))
         elif input_validate.check_input_phone_mode(chat_id):
             if input_validate.validation_phone(message.text):
                 message_to_send.update(preorder_pages_generator.create_preorder_posted_page())
@@ -360,7 +361,7 @@ def change_preorder_date(call):
 
 #  Изменение даты заказа было подтверждено
 @bot.callback_query_handler(func=lambda call: call.data == 'change_preorder_date_approved')
-def change_preorder_date(call):
+def change_preorder_date_approved(call):
     chat_id = call.message.chat.id
     order_mngmnt.remove_preorder(chat_id)
     call_data = 'main_menu_hire_' + customer_mngmnt.get_current_type_of_thing(chat_id)
