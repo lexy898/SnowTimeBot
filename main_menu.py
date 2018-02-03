@@ -7,7 +7,7 @@ def create_main_menu(preorder):
     message_text = 'ВЫБИРАЙ'
     markup = types.InlineKeyboardMarkup()
     if preorder:
-        item_list = preorder['ITEM_LIST']
+        item_list = preorder.get_item_list()
         if item_list:
             #  callback_data отсылает к страничке предзаказа
             markup.row(types.InlineKeyboardButton('Мой заказ('+str(len(item_list))+')',

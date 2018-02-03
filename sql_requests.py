@@ -1,13 +1,16 @@
 import sqlite3
 import logging
 from datetime import datetime, timedelta
+from customer import customer
+import config
+from order import order
 
 import os
 
 import sys
 
 logging.basicConfig(format=u'%(levelname)-8s [%(asctime)s] %(message)s', level=logging.ERROR, filename=u'log.txt')
-_DB_PATH = "hire.db3"
+_DB_PATH = config.get_db_path()+"\hire.db3"
 
 
 # фабрика для превращения результата запроса в словарь
@@ -28,7 +31,8 @@ def select_query(query):
         conn.close()
         return result
     except sqlite3.DatabaseError as err:
-        logging.error(u'Method:'+sys._getframe().f_code.co_name+' sqlite3.DatabaseError: ' + str(err) + ' Query: '+query)
+        logging.error(
+            u'Method:' + sys._getframe().f_code.co_name + ' sqlite3.DatabaseError: ' + str(err) + ' Query: ' + query)
 
 
 # Запрос типа SELECT (Возврвщает таблицу в виде словаря, где ключ - название поля)
@@ -42,7 +46,8 @@ def select_query_factory(query):
         conn.close()
         return result
     except sqlite3.DatabaseError as err:
-        logging.error(u'Method:'+sys._getframe().f_code.co_name+' sqlite3.DatabaseError: ' + str(err) + ' Query: '+query)
+        logging.error(
+            u'Method:' + sys._getframe().f_code.co_name + ' sqlite3.DatabaseError: ' + str(err) + ' Query: ' + query)
 
 
 # Запрос типа UPDATE или INSERT
@@ -54,7 +59,8 @@ def update_insert_query(query):
         conn.commit()
         conn.close()
     except sqlite3.DatabaseError as err:
-        logging.error(u'Method:' + sys._getframe().f_code.co_name + ' sqlite3.DatabaseError: ' + str(err) + ' Query: ' + query)
+        logging.error(
+            u'Method:' + sys._getframe().f_code.co_name + ' sqlite3.DatabaseError: ' + str(err) + ' Query: ' + query)
 
 
 # Получить аксессуары по типу
@@ -79,26 +85,17 @@ def get_thing_by_ID(thing_id):
 def get_all_customers():
     query = 'SELECT * FROM CUSTOMERS'
     customers = select_query_factory(query)
-    customers_dict = {}
-    for customer in customers:
-        customers_dict[customer['CHAT_ID']] = customer
-    return customers_dict
+    return customers
 
 
 #  добавить нового клиента
-def add_new_customer(chat_id):
-    now = datetime.strftime(datetime.now(), "%Y-%m-%d %H:%M:%S")
-    query = "INSERT INTO CUSTOMERS (\'CHAT_ID\', \'JOIN_DATE\') VALUES (\'" + str(chat_id) + \
-            "\', \'" + now + "\')"
-    update_insert_query(query)
-
-
-#  Добавить инфу по клиенту
-def add_customer_info(chat_id, customer_info):
-    query = "UPDATE CUSTOMERS SET NAME = \'" + str(customer_info['NAME']) + "\', " \
-             "LAST_NAME = \'" + str(customer_info['LAST_NAME']) + "\', " \
-             "USERNAME = \'" + str(customer_info['USERNAME']) + "\' " \
-             "WHERE CHAT_ID = \'" + str(chat_id) + "\'"
+def add_new_customer(new_customer):
+    query = "INSERT INTO CUSTOMERS (\'CHAT_ID\', \'USERNAME\', \'NAME\', \'LAST_NAME\', \'JOIN_DATE\')" \
+            " VALUES (\'" + str(new_customer.get_chat_id()) + "\', " \
+            "\'" + str(new_customer.get_username()) + "\', " \
+            "\'" + str(new_customer.get_name()) + "\', " \
+            "\'" + str(new_customer.get_last_name()) + "\', " \
+            "\'" + str(new_customer.get_join_date()) + "\')"
     update_insert_query(query)
 
 
@@ -109,31 +106,35 @@ def update_customer_phone(chat_id, phone):
 
 
 #  Создать заказ
-def create_order(customer_info, order):
-    chat_id = str(customer_info['CHAT_ID'])
+def create_order(new_order):
+    chat_id = str(new_order.get_chat_id())
     now = datetime.strftime(datetime.now(), "%Y-%m-%d %H:%M:%S")
-    start_date = datetime.strptime(order['START_DATE'], "%Y-%m-%d %H:%M:%S")
-    end_date = datetime.strftime(start_date + timedelta(days=1), "%Y-%m-%d %H:%M:%S")
-    order_id = '' # id заказа
+    start_date = datetime.strptime(new_order.get_start_date(), "%Y-%m-%d %H:%M:%S")
+    end_date = datetime.strftime(start_date + timedelta(days=new_order.get_days()), "%Y-%m-%d %H:%M:%S")
+    order_id = ''  # id заказа
     query = 'INSERT INTO ORDERS (CHAT_ID, CREATED_DATE) VALUES ' \
             '(\'' + chat_id + '\', \'' + now + '\')'
     try:
         conn = sqlite3.connect(_DB_PATH)
         cursor = conn.cursor()
-        cursor.execute(query) # Создаем заказ в таблице ORDERS
+        cursor.execute(query)  # Создаем заказ в таблице ORDERS
         conn.commit()
-        cursor.execute('SELECT ORDER_ID FROM ORDERS WHERE rowid=last_insert_rowid();') # Получаем ID свежесозданного заказа
+        cursor.execute(
+            'SELECT ORDER_ID FROM ORDERS WHERE rowid=last_insert_rowid();')  # Получаем ID свежесозданного заказа
         order_id += str(cursor.fetchone()[0])
-        for order_item in order['ITEM_LIST']:
+        item_list = new_order.get_item_list()
+        for order_item in item_list:
             query = 'INSERT INTO ORDERS_DETAILS (ORDER_ID, CHAT_ID, ITEM_ID, START_DATE, END_DATE, ' \
-                    'PHONE, STATUS) VALUES (\''+ order_id +'\', \''+ chat_id +'\', \''+ str(order_item) +'\', ' \
-                    '\'' + order['START_DATE'] + '\', \'' + end_date + '\', \'' + str(customer_info['PHONE']) +'\', \'NEW\')'
+                    'PHONE, STATUS) VALUES (\'' + order_id + '\', \'' + chat_id + '\', \'' + str(order_item) + '\', ' \
+                                                                                                               '\'' + \
+                    new_order.get_start_date() + '\', \'' + end_date + '\', \'' + str(new_order.get_phone()) + '\', \'NEW\')'
             cursor.execute(query)
         conn.commit()
         conn.close()
         return order_id
     except sqlite3.DatabaseError as err:
-        logging.error(u'Method:' + sys._getframe().f_code.co_name + ' sqlite3.DatabaseError: ' + str(err) + ' Query: ' + query)
+        logging.error(
+            u'Method:' + sys._getframe().f_code.co_name + ' sqlite3.DatabaseError: ' + str(err) + ' Query: ' + query)
         return None
 
 
@@ -163,6 +164,3 @@ def get_type_list_by_items(item_list):
         query = 'SELECT TYPE FROM ACCESSORIES WHERE ID = ' + str(item)
         type_list.append(select_query(query)[0][0])
     return type_list
-
-
-print(get_all_discount_sets())

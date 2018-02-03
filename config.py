@@ -20,3 +20,10 @@ def get_admin_list():
         return conf.get("admin", "adminList").split()
     except configparser.NoSectionError as err:
         logging.error(u'' + str(err) + '')
+
+
+def get_db_path():
+    try:
+        return conf.get("dataBase", "path")
+    except configparser.NoSectionError as err:
+        logging.error(u'' + str(err) + '')

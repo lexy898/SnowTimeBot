@@ -80,7 +80,7 @@ class PriceManagement:
 
     def _define_day_of_week(self, preorder):
         try:
-            start_date = datetime.strptime(preorder['START_DATE'], "%Y-%m-%d %H:%M:%S")
+            start_date = datetime.strptime(preorder.get_start_date(), "%Y-%m-%d %H:%M:%S")
             day_of_week = calendar.weekday(start_date.year, start_date.month, start_date.day)
             if day_of_week in self._WEEKDAYS:
                 return self._WEEKDAY
@@ -105,7 +105,7 @@ class PriceManagement:
 
     def _get_preorder_item_list(self, preorder):
         try:
-            return preorder['ITEM_LIST']
+            return preorder.get_item_list()
         except KeyError as err:
             logging.error(u'Method:' + sys._getframe().f_code.co_name + ' KeyError: ' + str(err) + '')
             return []

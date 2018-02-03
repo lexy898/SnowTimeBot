@@ -1,7 +1,7 @@
 import telebot
 import logging
 import config
-import order_pages_generator
+from order import order_pages_generator
 
 logging.basicConfig(format=u'%(levelname)-8s [%(asctime)s] %(message)s', level=logging.ERROR, filename=u'log.txt')
 

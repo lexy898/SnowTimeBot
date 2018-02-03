@@ -24,7 +24,7 @@ def create_preorder_page(preorder):
     message_text = '<b>Ваш заказ:</b>\n\n'
     markup = types.InlineKeyboardMarkup()
 
-    for item in preorder['ITEM_LIST']:
+    for item in preorder.get_item_list():
         items_with_attributes.append(sql_requests.get_thing_by_ID(item))  # Подтягиваются параметры предметов
     for item in items_with_attributes:
         if item[1] is not None:
@@ -115,11 +115,11 @@ def create_ask_phone_page(customer_phone):
         row = [types.InlineKeyboardButton("Да", callback_data="phone-approved"),
                types.InlineKeyboardButton("Указать другой", callback_data="change-phone-number")]
         markup.row(*row)
-        row = [types.InlineKeyboardButton("⬅ Назад", callback_data="go-to-preorder")]
-        markup.row(*row)
     else:
         message_text += "Напишите, пожалуйста, Ваш номер для связи\n" \
                         "в формате <b>79xxxxxxxxx</b>"
+    row = [types.InlineKeyboardButton("⬅ К заказу", callback_data="go-to-preorder")]
+    markup.row(*row)
     message = {'message_text': message_text, 'markup': markup}
     return message
 
@@ -130,6 +130,8 @@ def create_ask_again_phone_page():
                    'Пожалуйста, попробуйте ввести снова.\n' \
                    'Номер должен быть в формате <b>79xxxxxxxxx</b>'
     markup = types.InlineKeyboardMarkup()
+    row = [types.InlineKeyboardButton("⬅ К заказу", callback_data="go-to-preorder")]
+    markup.row(*row)
     message = {'message_text': message_text, 'markup': markup}
     return message
 
@@ -139,7 +141,7 @@ def create_change_phone_number_page():
     message_text = "Напишите, пожалуйста, Ваш новый номер для связи\n" \
                 "в формате <b>79xxxxxxxxx</b>"
     markup = types.InlineKeyboardMarkup()
-    row = [types.InlineKeyboardButton("⬅ Назад", callback_data="go-to-preorder")]
+    row = [types.InlineKeyboardButton("⬅ К заказу", callback_data="go-to-preorder")]
     markup.row(*row)
     message = {'message_text': message_text, 'markup': markup}
     return message
