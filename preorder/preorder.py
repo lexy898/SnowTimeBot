@@ -7,10 +7,11 @@ class Preorder:
         self._chat_id = None
         self._item_list = []
         self._start_date = None
-        self._days = None
+        self._days = 1
         self._price = None
         self._actual_price = None
         self._discount = None
+        self._phone = None
 
         logging.basicConfig(format=u'%(levelname)-8s [%(asctime)s] %(message)s', level=logging.ERROR,
                             filename=u'log.txt')
@@ -20,7 +21,7 @@ class Preorder:
         self._chat_id = chat_id
 
     def set_item_list(self, item_list):
-        self._item_list = item_list
+        self._item_list = list(item_list)
 
     def set_start_date(self, start_date):
         self._start_date = start_date
@@ -36,6 +37,9 @@ class Preorder:
 
     def set_discount(self, discount):
         self._discount = discount
+
+    def set_phone(self, phone):
+        self._phone = phone
 
     # Getters block
     def get_chat_id(self):
@@ -59,6 +63,10 @@ class Preorder:
     def get_discount(self):
         return self._discount
 
+    def get_phone(self):
+        return self._phone
+
+    # Other block
     def add_item(self, item_id):
         self._item_list.append(item_id)
 

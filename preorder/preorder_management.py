@@ -20,6 +20,13 @@ class PreorderManagement:
             return None
 
     @classmethod
+    def create_preorder(cls, chat_id, date):
+        new_preorder = preorder.Preorder()
+        new_preorder.set_chat_id(chat_id)
+        new_preorder.set_start_date(date)
+        cls.add_new_preorder(new_preorder)
+
+    @classmethod
     def add_new_preorder(cls, new_preorder):
         chat_id = new_preorder.get_chat_id()
         if chat_id is not None:
@@ -33,8 +40,13 @@ class PreorderManagement:
             logging.error(u'Method:' + sys._getframe().f_code.co_name + ' KeyError: ' + str(err) + '')
 
     @classmethod
+    def remove_item(cls, chat_id, item_id):
+        preorder = cls.get_preorder(chat_id)
+        preorder.remove_item(item_id)
+
+    @classmethod
     def is_preorder_exist(cls, chat_id):
-        if cls.get_preorder(chat_id):
+        if cls.get_preorder(chat_id) is not None:
             return True
         else:
             return False
