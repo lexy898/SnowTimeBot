@@ -10,7 +10,7 @@ import os
 import sys
 
 logging.basicConfig(format=u'%(levelname)-8s [%(asctime)s] %(message)s', level=logging.ERROR, filename=u'log.txt')
-_DB_PATH = str(os.getcwd())+"\hire.db3"
+_DB_PATH = str(os.getcwd())+"/hire.db3"
 
 
 # фабрика для превращения результата запроса в словарь
