@@ -60,9 +60,13 @@ class PriceManagement:
         for preorder_item_type in original_preorder_item_types_list:
             full_preorder_price += self._get_price_by_item_type(preorder_item_type, day_of_week)
         discount = full_preorder_price - preorder_price
+
+        preorder.set_price(full_preorder_price)
+        preorder.set_actual_price(preorder_price)
+        preorder.set_discount(discount)
+
         return {'preorder_price': str(preorder_price), 'full_preorder_price': str(full_preorder_price),
                 'discount': str(discount)}
-
 
     def _get_price_by_item_type(self, item_type, day_of_week):
         try:

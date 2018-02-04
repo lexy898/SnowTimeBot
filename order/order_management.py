@@ -33,9 +33,9 @@ class OrderManagement:
             cls.add_new_order(new_order)
             preorder_management.PreorderManagement.remove_preorder(chat_id)
             notifier.send_admin_new_order(new_order)
-            return True
+            return new_order.get_order_id()
         else:
-            return False
+            return None
 
     @classmethod
     def add_new_order(cls, new_order):
@@ -51,3 +51,19 @@ class OrderManagement:
             logging.error(u'Method:' + sys._getframe().f_code.co_name + ' KeyError: ' + str(err) + '')
             return None
 
+    #  Взять заказ в работу
+    @classmethod
+    def processing_order(cls, order, admin_id):
+        sql_requests.update_order_status(order.get_order_id(), admin_id, 'IN_WORK')
+        notifier.send_customer_processing_order(order)
+
+    #  Подтвердить заказ
+    @classmethod
+    def approve_order(cls, order, admin_id):
+        sql_requests.update_order_status(order.get_order_id(), admin_id, 'APPROVED')
+        notifier.send_customer_approve_order(order)
+
+    #  Отменить заказ
+    @classmethod
+    def close_order(cls, order, admin_id):
+        sql_requests.update_order_status(order.get_order_id(), admin_id, 'CLOSED')

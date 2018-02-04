@@ -7,11 +7,13 @@ import main_menu
 from order import order_management
 from preorder import preorder_management
 from preorder import preorder_pages_generator
+from order import order_pages_generator
 from telegramcalendar import create_calendar
 import pagination
 from customer import customer_management
 import input_validator
 import time
+import administrator
 
 logging.basicConfig(format=u'%(levelname)-8s [%(asctime)s] %(message)s', level=logging.ERROR, filename=u'log.txt')
 
@@ -21,11 +23,11 @@ bot = telebot.TeleBot(TOKEN)
 
 order_mngmnt = order_management.OrderManagement()  # Управление Заказами
 customer_mngmnt = customer_management.CustomerManagement()  # управление клиентами
+customer_mngmnt.init_customers()
 preorder_mngmnt = preorder_management.PreorderManagement()  # Управление предзаказамиф
 input_validate = input_validator.InputValidator()
-
-customer_mngmnt.init_customers()
-
+admin = administrator.Administrator()
+admin.init_admins()
 
 #  Обработка ошибок
 def key_error_handler(err, call):
@@ -76,6 +78,7 @@ def get_main_menu_from_outside(call):
         bot.send_sticker(chat_id, 'CAADAgADAgAD2INrCdsC2_uAN23lAg')
         bot.send_message(chat_id, message['message_text'], reply_markup=message['markup'])
         input_validate.off_input_phone_mode(str(chat_id))  # Отключаем режим ввода телефона
+        bot.answer_callback_query(call.id, text="")
     except AttributeError as err:
         attribute_error_handler(err, call)
     except KeyError as err:
@@ -98,10 +101,12 @@ def open_item(message):
                 preorder_pages_generator.create_edit_preorder_page(preorder_mngmnt.get_preorder(chat_id).get_item_list()))
         elif input_validate.check_input_phone_mode(chat_id):
             if input_validate.validation_phone(message.text):
-                message_to_send.update(preorder_pages_generator.create_preorder_posted_page())
                 customer_mngmnt.update_customer_phone(chat_id, message.text)
                 preorder_mngmnt.get_preorder(chat_id).set_phone(message.text)
-                order_mngmnt.create_order(preorder_mngmnt.get_preorder(chat_id))
+                order_id = order_mngmnt.create_order(preorder_mngmnt.get_preorder(chat_id))
+                if order_id is not None:
+                    message_to_send.update(preorder_pages_generator
+                                           .create_preorder_posted_page(order_mngmnt.get_order_by_order_id(order_id)))
             else:
                 message_to_send.update(preorder_pages_generator.create_ask_again_phone_page())
         bot.send_message(chat_id, message_to_send['message_text'], reply_markup=message_to_send['markup'],
@@ -386,8 +391,9 @@ def phone_approved(call):
     try:
         customer_phone = customer_mngmnt.get_customer(call.message.chat.id).get_phone()
         preorder_mngmnt.get_preorder(call.message.chat.id).set_phone(customer_phone)
-        if order_mngmnt.create_order(preorder_mngmnt.get_preorder(call.message.chat.id)):
-            message = preorder_pages_generator.create_preorder_posted_page()
+        order_id = order_mngmnt.create_order(preorder_mngmnt.get_preorder(call.message.chat.id))
+        if order_id is not None:
+            message = preorder_pages_generator.create_preorder_posted_page(order_mngmnt.get_order_by_order_id(order_id))
             bot.edit_message_text(message['message_text'], call.from_user.id, call.message.message_id,
                                   reply_markup=message['markup'], parse_mode='HTML')
         else:
@@ -433,6 +439,72 @@ def change_preorder_date_approved(call):
         call_data = 'main_menu_hire_' + customer_mngmnt.get_customer(chat_id).get_current_type_of_thing()
         call.data = call_data
         get_calendar(call)
+    except AttributeError as err:
+        attribute_error_handler(err, call)
+    except KeyError as err:
+        key_error_handler(err, call)
+
+
+'''
+*************************************************
+************* ФУНКЦИОНАЛ АДМИНИСТРАТОРА*********
+*************************************************
+'''
+
+
+#  Взятие заказа в работу администротором
+@bot.callback_query_handler(func=lambda call: call.data[0:16] == 'processing-order')
+def processing_order(call):
+    try:
+        admin_id = call.message.chat.id
+        order_admin = admin.get_admin(admin_id)
+        if order_admin is not None:
+            order_id = call.data[16:]
+            order_mngmnt.processing_order(order_mngmnt.get_order_by_order_id(order_id), admin_id)
+            message = order_pages_generator.admin_create_order_in_processing_page(order_mngmnt.get_order_by_order_id(order_id))
+        else:
+            message = order_pages_generator.admin_create_is_not_admin_page()
+        bot.edit_message_text(message['message_text'], call.from_user.id, call.message.message_id,
+                              reply_markup=message['markup'], parse_mode='HTML')
+    except AttributeError as err:
+        attribute_error_handler(err, call)
+    except KeyError as err:
+        key_error_handler(err, call)
+
+
+#  Заказ подтвержден администратором
+@bot.callback_query_handler(func=lambda call: call.data[0:13] == 'approve-order')
+def approve_order(call):
+    try:
+        admin_id = call.message.chat.id
+        order_admin = admin.get_admin(admin_id)
+        if order_admin is not None:
+            order_id = call.data[13:]
+            order_mngmnt.approve_order(order_mngmnt.get_order_by_order_id(order_id), admin_id)
+            message = order_pages_generator.admin_create_order_approved_page(order_mngmnt.get_order_by_order_id(order_id))
+        else:
+            message = order_pages_generator.admin_create_is_not_admin_page()
+        bot.edit_message_text(message['message_text'], call.from_user.id, call.message.message_id,
+                              reply_markup=message['markup'], parse_mode='HTML')
+    except AttributeError as err:
+        attribute_error_handler(err, call)
+    except KeyError as err:
+        key_error_handler(err, call)
+
+
+@bot.callback_query_handler(func=lambda call: call.data[0:18] == 'order-not-approved')
+def order_not_approved(call):
+    try:
+        admin_id = call.message.chat.id
+        order_admin = admin.get_admin(admin_id)
+        if order_admin is not None:
+            order_id = call.data[18:]
+            order_mngmnt.close_order(order_mngmnt.get_order_by_order_id(order_id), admin_id)
+            message = order_pages_generator.admin_create_order_canceled_page(order_mngmnt.get_order_by_order_id(order_id))
+        else:
+            message = order_pages_generator.admin_create_is_not_admin_page()
+        bot.edit_message_text(message['message_text'], call.from_user.id, call.message.message_id,
+                              reply_markup=message['markup'], parse_mode='HTML')
     except AttributeError as err:
         attribute_error_handler(err, call)
     except KeyError as err:

@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from telebot import types
 from math import ceil
 import sql_requests
@@ -7,6 +9,9 @@ ELEMENTS_ON_PAGE = 3
 
 def create_list(type_of_thing, page, date):
     accessories = sql_requests.get_things_by_type(type_of_thing)
+
+    date = datetime.strptime(date, "%Y-%m-%d %H:%M:%S")
+    date = datetime.strftime(date, "%d-%m-%Y")
 
     page_count = ceil(len(accessories) / ELEMENTS_ON_PAGE)
     limit = len(accessories)

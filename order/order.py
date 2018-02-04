@@ -1,7 +1,3 @@
-import logging
-import sys
-
-
 class Order:
     def __init__(self):
         self._order_id = None
@@ -15,8 +11,6 @@ class Order:
         self._phone = None
         self._admin = None
 
-        logging.basicConfig(format=u'%(levelname)-8s [%(asctime)s] %(message)s', level=logging.ERROR,
-                            filename=u'log.txt')
 
     # Setters block
     def set_order_id(self, order_id):

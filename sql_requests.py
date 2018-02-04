@@ -164,3 +164,18 @@ def get_type_list_by_items(item_list):
         query = 'SELECT TYPE FROM ACCESSORIES WHERE ID = ' + str(item)
         type_list.append(select_query(query)[0][0])
     return type_list
+
+
+#  Загрузить всех администраторов
+def get_all_admins():
+    query = 'SELECT * FROM ADMINS'
+    admins = select_query_factory(query)
+    return admins
+
+
+# Обновить статус заказа
+def update_order_status(order_id, admin_id, status):
+    query = 'UPDATE ORDERS_DETAILS SET STATUS=\'' + status + '\', ADMIN=\'' + str(admin_id) + '\' WHERE ORDER_ID=' \
+                                                                                              '' + str(order_id)
+    print(query)
+    update_insert_query(query)

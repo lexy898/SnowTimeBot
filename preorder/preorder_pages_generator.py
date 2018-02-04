@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from telebot import types
 
 import main_menu
@@ -21,7 +23,11 @@ def create_item_view_page(item_id):
 #  Создать страницу с отображением текущего предзаказа
 def create_preorder_page(preorder):
     items_with_attributes = []
-    message_text = '<b>Ваш заказ:</b>\n\n'
+
+    start_date = datetime.strptime(preorder.get_start_date(), "%Y-%m-%d %H:%M:%S")
+    start_date = datetime.strftime(start_date, "%d-%m-%Y")
+
+    message_text = '<b>Ваш заказ на ' + start_date + ':</b>\n\n'
     markup = types.InlineKeyboardMarkup()
 
     for item in preorder.get_item_list():
@@ -116,7 +122,7 @@ def create_ask_phone_page(customer_phone):
                types.InlineKeyboardButton("Указать другой", callback_data="change-phone-number")]
         markup.row(*row)
     else:
-        message_text += "Напишите, пожалуйста, Ваш номер для связи\n" \
+        message_text += "Отправьте, пожалуйста, Ваш номер для связи\n" \
                         "в формате <b>79xxxxxxxxx</b>"
     row = [types.InlineKeyboardButton("⬅ К заказу", callback_data="go-to-preorder")]
     markup.row(*row)
@@ -138,7 +144,7 @@ def create_ask_again_phone_page():
 
 #  Создать страничку изменения существующего номера телефона клиента
 def create_change_phone_number_page():
-    message_text = "Напишите, пожалуйста, Ваш новый номер для связи\n" \
+    message_text = "Отправьте, пожалуйста, Ваш новый номер для связи\n" \
                 "в формате <b>79xxxxxxxxx</b>"
     markup = types.InlineKeyboardMarkup()
     row = [types.InlineKeyboardButton("⬅ К заказу", callback_data="go-to-preorder")]
@@ -148,10 +154,15 @@ def create_change_phone_number_page():
 
 
 #  Создать страничку оформленного заказа
-def create_preorder_posted_page():
+def create_preorder_posted_page(order):
+    start_date = datetime.strptime(order.get_start_date(), "%Y-%m-%d %H:%M:%S")
+    start_date = datetime.strftime(start_date, "%d-%m-%Y")
     markup = types.InlineKeyboardMarkup()
     message_text = 'Спасибо!\n' \
-                   'Заказ отправлен.\n' \
+                   'Заказ отправлен.\n\n' \
+                   'Номер заказа <b>#' + str(order.get_order_id()) + '</b>\n' \
+                   'Дата: <b>' + start_date + '</b>\n' \
+                   'Сумма: <b>' + str(order.get_actual_price()) + 'Р.</b>\n\n' \
                    'Мы свяжемся с вами для подтверждения'
     row = [types.InlineKeyboardButton("Вернуться на главное меню", callback_data="back-to-main-menu")]
     markup.row(*row)
