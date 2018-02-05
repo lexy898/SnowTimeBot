@@ -75,8 +75,20 @@ def admin_create_is_not_admin_page():
     return message
 
 
-def admin_create_order_canceled_page(order):
-    message_text = '<b> Заказ #' + str(order.get_order_id()) + ' отменен</b>\n'
+def admin_create_order_canceled_page(order_id):
+    message_text = '<b> Заказ #' + str(order_id) + ' отменен</b>\n'
+    markup = types.InlineKeyboardMarkup()
+    row = [types.InlineKeyboardButton("На главное меню", callback_data="go-to-admin-menu")]
+    markup.row(*row)
+    message = {'message_text': message_text, 'markup': markup}
+    return message
+
+
+#  Страничка сообщает о том, что заказ обрабатывается другим администратором
+def admin_create_order_unavailable_page(admin, order_id):
+    message_text = 'Заказ <b>#' + str(order_id) + '</b> обрабатывается другим администратором\n'
+    message_text += 'Админ: <b>' + admin.admin_name + '</b>\n'
+    message_text += 'Телефон: <b>' + admin.admin_phone + '</b>\n'
     markup = types.InlineKeyboardMarkup()
     row = [types.InlineKeyboardButton("На главное меню", callback_data="go-to-admin-menu")]
     markup.row(*row)
@@ -111,5 +123,4 @@ def create_order_approved_page(order):
     markup.row(*row)
     message = {'message_text': message_text, 'markup': markup}
     return message
-
 

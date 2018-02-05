@@ -177,5 +177,21 @@ def get_all_admins():
 def update_order_status(order_id, admin_id, status):
     query = 'UPDATE ORDERS_DETAILS SET STATUS=\'' + status + '\', ADMIN=\'' + str(admin_id) + '\' WHERE ORDER_ID=' \
                                                                                               '' + str(order_id)
-    print(query)
     update_insert_query(query)
+
+
+#  Получить статус заказа
+def get_order_status(order_id):
+    query = 'SELECT STATUS FROM ORDERS_DETAILS WHERE ORDER_ID = ' + str(order_id)
+    return select_query(query)[0][0]
+
+
+#  Получить администратора заказа
+def get_order_admin(order_id):
+    query = 'SELECT ADMIN FROM ORDERS_DETAILS WHERE ORDER_ID = ' + str(order_id)
+    admin_id = select_query(query)[0][0]
+    if admin_id is not None:
+        query = 'SELECT * FROM ADMINS WHERE CHAT_ID = ' + str(admin_id)
+        return select_query_factory(query)[0]
+    else:
+        return None

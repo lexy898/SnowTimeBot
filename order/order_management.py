@@ -1,11 +1,18 @@
-from datetime import datetime
 import logging
-from order import order
+from order import order, order_pages_generator
 from preorder import preorder_management
 import sys
-
+import administrator
 import notifier
 import sql_requests
+
+
+class OrderStatuses:
+    def __init__(self):
+        self.NEW = 'NEW'
+        self.IN_WORK = 'IN_WORK'
+        self.APPROVED = 'APPROVED'
+        self.CLOSED = 'CLOSED'
 
 
 class OrderManagement:
@@ -13,6 +20,7 @@ class OrderManagement:
 
     logging.basicConfig(format=u'%(levelname)-8s [%(asctime)s] %(message)s', level=logging.ERROR,
                         filename=u'log.txt')
+    order_statuses = OrderStatuses()
 
     @classmethod
     def create_order(cls, preorder):
@@ -53,17 +61,55 @@ class OrderManagement:
 
     #  Взять заказ в работу
     @classmethod
-    def processing_order(cls, order, admin_id):
-        sql_requests.update_order_status(order.get_order_id(), admin_id, 'IN_WORK')
-        notifier.send_customer_processing_order(order)
+    def processing_order(cls, order_id, order_admin):
+        global message
+        if order_admin is not None:
+            order_status = sql_requests.get_order_status(order_id)
+            if order_status == cls.order_statuses.NEW:
+                sql_requests.update_order_status(order_id, order_admin.admin_id, cls.order_statuses.IN_WORK)
+                notifier.send_customer_processing_order(cls.get_order_by_order_id(order_id))
+                message = order_pages_generator.admin_create_order_in_processing_page(cls.get_order_by_order_id(order_id))
+            else:
+                admin = administrator.Admin(sql_requests.get_order_admin(order_id))
+                message = order_pages_generator.admin_create_order_unavailable_page(admin, order_id)
+        else:
+            message = order_pages_generator.admin_create_is_not_admin_page()
+        return message
 
     #  Подтвердить заказ
     @classmethod
-    def approve_order(cls, order, admin_id):
-        sql_requests.update_order_status(order.get_order_id(), admin_id, 'APPROVED')
-        notifier.send_customer_approve_order(order)
+    def approve_order(cls, order_id, order_admin):
+        global message
+        if order_admin is not None:
+            order_status = sql_requests.get_order_status(order_id)
+            if order_status == cls.order_statuses.IN_WORK:
+                sql_requests.update_order_status(order_id, order_admin.admin_id, cls.order_statuses.APPROVED)
+                notifier.send_customer_approve_order(cls.get_order_by_order_id(order_id))
+                message = order_pages_generator.admin_create_order_approved_page(
+                    cls.get_order_by_order_id(order_id))
+            else:
+                admin = administrator.Admin(sql_requests.get_order_admin(order_id))
+                message = order_pages_generator.admin_create_order_unavailable_page(admin, order_id)
+        else:
+            message = order_pages_generator.admin_create_is_not_admin_page()
+        return message
 
     #  Отменить заказ
     @classmethod
-    def close_order(cls, order, admin_id):
-        sql_requests.update_order_status(order.get_order_id(), admin_id, 'CLOSED')
+    def close_order(cls, order_id, order_admin):
+        global message
+        if order_admin is not None:
+            if sql_requests.get_order_admin(order_id) is not None:
+                admin = administrator.Admin(sql_requests.get_order_admin(order_id))
+                if admin.admin_id == order_admin.admin_id:
+                    sql_requests.update_order_status(order_id, order_admin.admin_id, cls.order_statuses.CLOSED)
+                    message = order_pages_generator.admin_create_order_canceled_page(order_id)
+                else:
+                    message = order_pages_generator.admin_create_order_unavailable_page(admin, order_id)
+            else:
+                sql_requests.update_order_status(order_id, order_admin.admin_id, cls.order_statuses.CLOSED)
+                message = order_pages_generator.admin_create_order_canceled_page(order_id)
+        else:
+            message = order_pages_generator.admin_create_is_not_admin_page()
+        return message
+

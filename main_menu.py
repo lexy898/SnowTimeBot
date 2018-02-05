@@ -22,6 +22,7 @@ def create_main_menu(preorder):
     message = {'message_text': message_text, 'markup': markup}
     return message
 
+
 def about_us_page():
     message_text = "<b>Прокат Сноубордов и аксессуаров в городе Вологда.</b> \n " \
                    "Для наших любимых клиентов мы заранее позаботились о наличии всех размеров ботинок и досок. \n" \

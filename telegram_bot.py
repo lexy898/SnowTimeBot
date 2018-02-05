@@ -470,14 +470,8 @@ def change_preorder_date_approved(call):
 @bot.callback_query_handler(func=lambda call: call.data[0:16] == 'processing-order')
 def processing_order(call):
     try:
-        admin_id = call.message.chat.id
-        order_admin = admin.get_admin(admin_id)
-        if order_admin is not None:
-            order_id = call.data[16:]
-            order_mngmnt.processing_order(order_mngmnt.get_order_by_order_id(order_id), admin_id)
-            message = order_pages_generator.admin_create_order_in_processing_page(order_mngmnt.get_order_by_order_id(order_id))
-        else:
-            message = order_pages_generator.admin_create_is_not_admin_page()
+        order_admin = admin.get_admin(call.message.chat.id)
+        message = order_mngmnt.processing_order(call.data[16:], order_admin)
         bot.edit_message_text(message['message_text'], call.from_user.id, call.message.message_id,
                               reply_markup=message['markup'], parse_mode='HTML')
     except AttributeError as err:
@@ -490,14 +484,8 @@ def processing_order(call):
 @bot.callback_query_handler(func=lambda call: call.data[0:13] == 'approve-order')
 def approve_order(call):
     try:
-        admin_id = call.message.chat.id
-        order_admin = admin.get_admin(admin_id)
-        if order_admin is not None:
-            order_id = call.data[13:]
-            order_mngmnt.approve_order(order_mngmnt.get_order_by_order_id(order_id), admin_id)
-            message = order_pages_generator.admin_create_order_approved_page(order_mngmnt.get_order_by_order_id(order_id))
-        else:
-            message = order_pages_generator.admin_create_is_not_admin_page()
+        order_admin = admin.get_admin(call.message.chat.id)
+        message = order_mngmnt.approve_order(call.data[13:], order_admin)
         bot.edit_message_text(message['message_text'], call.from_user.id, call.message.message_id,
                               reply_markup=message['markup'], parse_mode='HTML')
     except AttributeError as err:
@@ -509,14 +497,8 @@ def approve_order(call):
 @bot.callback_query_handler(func=lambda call: call.data[0:18] == 'order-not-approved')
 def order_not_approved(call):
     try:
-        admin_id = call.message.chat.id
-        order_admin = admin.get_admin(admin_id)
-        if order_admin is not None:
-            order_id = call.data[18:]
-            order_mngmnt.close_order(order_mngmnt.get_order_by_order_id(order_id), admin_id)
-            message = order_pages_generator.admin_create_order_canceled_page(order_mngmnt.get_order_by_order_id(order_id))
-        else:
-            message = order_pages_generator.admin_create_is_not_admin_page()
+        order_admin = admin.get_admin(call.message.chat.id)
+        message = order_mngmnt.close_order(call.data[18:], order_admin)
         bot.edit_message_text(message['message_text'], call.from_user.id, call.message.message_id,
                               reply_markup=message['markup'], parse_mode='HTML')
     except AttributeError as err:
