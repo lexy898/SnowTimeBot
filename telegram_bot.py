@@ -293,9 +293,10 @@ def turn_page(call):
         type_error_handler(err, call)
         return 0
 
+
 '''
 *************************************************
-*************РАБОТА С  ПРЕДЗАКАЗОМ***************************
+*************РАБОТА С  ПРЕДЗАКАЗОМ***************
 *************************************************
 '''
 
@@ -375,6 +376,7 @@ def delete_preorder_yes(call):
     try:
         chat_id = call.message.chat.id
         preorder_mngmnt.remove_preorder(chat_id)
+        bot.delete_message(chat_id, call.message.message_id)
         get_main_menu(call.message)
         bot.answer_callback_query(call.id, text="Заказ успешно удален")
     except AttributeError as err:

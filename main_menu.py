@@ -4,7 +4,7 @@ import sql_requests
 
 def create_main_menu(preorder):
     types_of_things = sql_requests.get_all_types_of_things()
-    message_text = 'Можешь выбрать все, что тебе нужно: '
+    message_text = 'Здесь ты можешь выбрать все, что тебе нужно: '
     markup = types.InlineKeyboardMarkup()
     if preorder:
         item_list = preorder.get_item_list()
