@@ -4,13 +4,13 @@ import sql_requests
 
 def create_main_menu(preorder):
     types_of_things = sql_requests.get_all_types_of_things()
-    message_text = 'ВЫБИРАЙ'
+    message_text = 'Можешь выбрать все, что тебе нужно: '
     markup = types.InlineKeyboardMarkup()
     if preorder:
         item_list = preorder.get_item_list()
         if item_list:
             #  callback_data отсылает к страничке предзаказа
-            markup.row(types.InlineKeyboardButton('Мой заказ('+str(len(item_list))+')',
+            markup.row(types.InlineKeyboardButton('Корзина('+str(len(item_list))+')',
                                                   callback_data='go-to-preorder'))
     for key in types_of_things:
         type_of_thing = types_of_things[key]
@@ -22,4 +22,14 @@ def create_main_menu(preorder):
     message = {'message_text': message_text, 'markup': markup}
     return message
 
-
+def about_us_page():
+    message_text = "<b>Прокат Сноубордов и аксессуаров в городе Вологда.</b> \n " \
+                   "Для наших любимых клиентов мы заранее позаботились о наличии всех размеров ботинок и досок. \n" \
+                   "Никто не будет обделен.😉\n" \
+                   "<b>Благовещенская 69</b>.\n" \
+                   "Круглосуточно на связи <b>+7(911) 504-34-01</b>\n\n" \
+                   "Всем белого и пушистого!⛷🏂 "
+    markup = types.InlineKeyboardMarkup()
+    markup.row(types.InlineKeyboardButton("Вернуться на главное меню", callback_data="back-to-main-menu"))
+    message = {'message_text': message_text, 'markup': markup}
+    return message

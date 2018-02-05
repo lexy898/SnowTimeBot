@@ -85,6 +85,15 @@ def get_main_menu_from_outside(call):
         key_error_handler(err, call)
 
 
+#  Переход на раздел "о нас"
+@bot.callback_query_handler(func=lambda call: call.data == 'about_us')
+def about_us(call):
+    message = main_menu.about_us_page()
+    bot.edit_message_text(message['message_text'], call.from_user.id,
+                          call.message.message_id, reply_markup=message['markup'], parse_mode='HTML')
+    bot.answer_callback_query(call.id, text="")
+
+
 #  Открыть выбранный item / удалить вещь из предзаказа
 @bot.message_handler(content_types=['text'])
 def open_item(message):
@@ -124,6 +133,11 @@ def open_item(message):
 *************КАЛЕНДАРЬ***************************
 *************************************************
 '''
+
+
+@bot.callback_query_handler(func=lambda call: call.data == 'day-unavailable')
+def day_unavailable(call):
+    bot.answer_callback_query(call.id, text="Выбранная дата недоступна")
 
 
 @bot.callback_query_handler(func=lambda call: call.data[0:9] == 'main_menu')
