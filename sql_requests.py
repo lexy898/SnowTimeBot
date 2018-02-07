@@ -66,7 +66,7 @@ def update_insert_query(query):
 # Получить аксессуары по типу
 def get_things_by_type(type_of_thing):
     query = "SELECT * FROM ACCESSORIES WHERE TYPE = \"" + str(type_of_thing) + "\""
-    return select_query(query)
+    return select_query_factory(query)
 
 
 #  Получить ссылку на изображение по ID
@@ -128,6 +128,10 @@ def create_order(new_order):
                     'PHONE, STATUS) VALUES (\'' + order_id + '\', \'' + chat_id + '\', \'' + str(order_item) + '\', ' \
                                                                                                                '\'' + \
                     new_order.get_start_date() + '\', \'' + end_date + '\', \'' + str(new_order.get_phone()) + '\', \'NEW\')'
+            cursor.execute(query)
+            query = 'UPDATE ACCESSORIES SET START_DATE = \'' + new_order.get_start_date() + '\', ' \
+                    'END_DATE = \'' + end_date + '\', ORDER_ID = \'' + order_id + '\' ' \
+                    'WHERE ID = ' + str(order_item)
             cursor.execute(query)
         conn.commit()
         conn.close()

@@ -154,8 +154,8 @@ def get_calendar(call):
                                   call.message.message_id, reply_markup=markup)
             bot.answer_callback_query(call.id, text="")
         else:
-            message = pagination.create_list(customer_mngmnt.get_customer(chat_id).get_current_type_of_thing(), 0,
-                                             preorder_mngmnt.get_preorder(chat_id).get_start_date())
+            message = pagination.create_list(customer_mngmnt.get_customer(chat_id), 0,
+                                             preorder_mngmnt.get_preorder(chat_id))
             bot.edit_message_text(message['message_text'], call.from_user.id,
                                   call.message.message_id, reply_markup=message['markup'], parse_mode='HTML')
             bot.answer_callback_query(call.id, text="")
@@ -173,8 +173,8 @@ def get_day(call):
             day = call.data[13:]
             date = str(datetime.datetime(int(saved_date[0]), int(saved_date[1]), int(day), 0, 0, 0))
             preorder_mngmnt.create_preorder(chat_id, date)
-            message = pagination.create_list(customer_mngmnt.get_customer(chat_id).get_current_type_of_thing(), 0,
-                                             preorder_mngmnt.get_preorder(chat_id).get_start_date())
+            message = pagination.create_list(customer_mngmnt.get_customer(chat_id), 0,
+                                             preorder_mngmnt.get_preorder(chat_id))
             bot.edit_message_text(message['message_text'], call.from_user.id,
                                   call.message.message_id, reply_markup=message['markup'], parse_mode='HTML')
             bot.answer_callback_query(call.id, text="")
@@ -184,6 +184,8 @@ def get_day(call):
             get_main_menu(call.message)
     except AttributeError as err:
         attribute_error_handler(err, call)
+    except KeyError as err:
+        key_error_handler(err, call)
 
 
 @bot.callback_query_handler(func=lambda call: call.data == 'next-month')
@@ -256,9 +258,9 @@ def previous_page(call):
 def previous_page_from_item_page(call):
     chat_id = call.message.chat.id
     try:
-        message = pagination.create_list(customer_mngmnt.get_customer(chat_id).get_current_type_of_thing(),
+        message = pagination.create_list(customer_mngmnt.get_customer(chat_id),
                                          customer_mngmnt.get_customer(chat_id).get_current_page(),
-                                         preorder_mngmnt.get_preorder(chat_id).get_start_date())
+                                         preorder_mngmnt.get_preorder(chat_id))
         bot.edit_message_text(message['message_text'], call.from_user.id,
                               call.message.message_id, reply_markup=message['markup'], parse_mode='HTML')
         bot.answer_callback_query(call.id, text="")
@@ -277,8 +279,8 @@ def turn_page(call):
         else:
             customer_mngmnt.get_customer(chat_id).set_current_page(current_page - 1)
         current_page = customer_mngmnt.get_customer(chat_id).get_current_page()
-        message = pagination.create_list(customer_mngmnt.get_customer(chat_id).get_current_type_of_thing(),
-                                         current_page, preorder_mngmnt.get_preorder(chat_id).get_start_date())
+        message = pagination.create_list(customer_mngmnt.get_customer(chat_id),
+                                         current_page, preorder_mngmnt.get_preorder(chat_id))
         bot.edit_message_text(message['message_text'], call.from_user.id, call.message.message_id,
                               reply_markup=message['markup'], parse_mode='HTML')
         bot.answer_callback_query(call.id, text="")
